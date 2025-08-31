@@ -1,0 +1,40 @@
+@layer tailwind-base, primereact, tailwind-utilities;
+
+@import 'primereact/resources/themes/lara-light-blue/theme.css' layer(primereact);
+/* @import 'primereact/resources/themes/md-light-indigo/theme.css' layer(primereact); */
+@import 'primeicons/primeicons.css';
+
+@layer tailwind-base {
+  @import 'tailwindcss/theme.css';
+}
+
+@layer tailwind-utilities {
+  @import 'tailwindcss/utilities.css';
+}
+
+.dev {
+  /* border: 1px solid red; */
+  background-color: lightgrey;
+}
+
+.nav-button {
+  @apply h-40 w-40;
+}
+
+.pos-button {
+  width: 152px;
+  height: 80px;
+}
+
+body {
+  background-color: aliceblue;
+}
+
+.compact-table .p-datatable-tbody > tr > td,
+.compact-table .p-datatable-thead > tr > th {
+  padding: 5px 6px;
+}
+
+.highlight {
+  background-color: #ffff99;
+}

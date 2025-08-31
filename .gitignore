@@ -1,0 +1,73 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# testing
+coverage
+.nyc_output
+
+# builds
+build
+dist
+.next
+deploy
+api.tar
+ui.tar
+python.tar
+env_files.zip
+out
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*
+
+# vercel
+.vercel
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+#temp
+.tmp
+
+#ptyhon
+__pycache__/
+*.py[cod]
+*$py.class
+
+#codgen
+codgen-validation.txt
+
+#storage
+.storage
+
+service-account.json
+.turbo
+
+_common.json
