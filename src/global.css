@@ -30,6 +30,16 @@ body {
   background-color: aliceblue;
 }
 
+@media print {
+  @page {
+    size: 75mm auto; /* Change to 58mm if using 58mm paper */
+  }
+  body {
+    margin: 0;
+    background-color: transparent;
+  }
+}
+
 .compact-table .p-datatable-tbody > tr > td,
 .compact-table .p-datatable-thead > tr > th {
   padding: 5px 6px;

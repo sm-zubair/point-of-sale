@@ -13,8 +13,9 @@ import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { create, getAll, query, remove, update } from '../../../actions';
+import { createCategory, getCategories, getItems, removeCategory, updateCategory } from '../../../actions';
 import notify from '../../../helpers/notify';
+import uuid from '../../../helpers/uuid';
 
 export default function CategoriesPage() {
   const [globalFilterValue, setGlobalFilterValue] = useState('');
@@ -50,11 +51,17 @@ export default function CategoriesPage() {
     onSubmit: async (values) => {
       try {
         if (selectedCategory) {
-          const item = await update(
-            'Category',
-            { id: selectedCategory.id },
-            { name: values.name, price: values.price, order: values.order, categoryId: values.categoryId }
-          );
+          const item = await updateCategory({
+            where: {
+              id: selectedCategory.id,
+            },
+            data: {
+              name: values.name,
+              price: values.price,
+              order: values.order,
+              categoryId: values.categoryId ?? null,
+            },
+          });
           if (item) {
             const _categories = categories.filter((c) => c.id !== selectedCategory.id);
             _categories.unshift({ ...values, ...selectedCategory });
@@ -62,11 +69,14 @@ export default function CategoriesPage() {
             notify('success', 'Category updated', 'Success');
           }
         } else {
-          const item = await create('Category', {
-            name: values.name,
-            price: values.price,
-            order: values.order,
-            categoryId: values.categoryId,
+          const item = await createCategory({
+            data: {
+              id: uuid(),
+              name: values.name,
+              price: values.price,
+              order: values.order,
+              categoryId: values.categoryId ?? null,
+            },
           });
           notify('success', 'Category added', 'Success');
           setCategories([item, ...categories]);
@@ -91,10 +101,9 @@ export default function CategoriesPage() {
   }, [selectedCategory]);
 
   useEffect(() => {
-    getAll('Category', {
-      order: {
-        order: 'ASC',
-        categoryId: 'ASC',
+    getCategories({
+      orderBy: {
+        name: 'asc',
       },
     }).then((categories) => {
       setCategories(categories);
@@ -158,14 +167,18 @@ export default function CategoriesPage() {
                   disabled={!selectedCategory}
                   onClick={async () => {
                     if (!window.confirm('Are you sure you want to delete this category?')) return;
-                    const items = await query(
-                      `SELECT name FROM items where JSON_CONTAINS(categories, '"${selectedCategory.id}"');`
-                    );
+                    const items = await getItems({
+                      where: {
+                        categories: {
+                          array_contains: selectedCategory.id,
+                        },
+                      },
+                    });
                     if (items.length > 0) {
                       notify('error', 'Category has items', items.map((i: any) => i.name).join(', '));
                       return;
                     }
-                    const result = await remove('Category', { id: selectedCategory.id });
+                    const result = await removeCategory({ where: { id: selectedCategory.id } });
                     if (result) {
                       const _categories = categories.filter((c) => c.id !== selectedCategory.id);
                       setCategories(_categories);
@@ -227,9 +240,8 @@ export default function CategoriesPage() {
                 },
               }}
             >
-              <Column field="order" header="Order" sortable></Column>
-              <Column field="name" header="Name"></Column>
-              <Column field="price" header="Price"></Column>
+              <Column field="order" header="Order" sortable style={{ width: '80px' }} />
+              <Column field="name" header="Name" style={{ width: '200px' }} />
               <Column
                 field="categoryId"
                 header="Category"
@@ -237,7 +249,9 @@ export default function CategoriesPage() {
                   const category = categories.find((c) => c.id === rowData.categoryId);
                   return category ? category.name : '';
                 }}
-              ></Column>
+                style={{ width: '200px' }}
+              />
+              <Column field="price" header="Price" style={{ width: '80px' }} />
             </DataTable>
           </div>
         </div>

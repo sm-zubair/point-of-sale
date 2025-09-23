@@ -68,6 +68,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }}
           className="min-w-24 p-5"
         />
+        <Button
+          label="Accounts"
+          icon="pi pi-money-bill"
+          severity="secondary"
+          onClick={() => {
+            router.push('/admin/accounts');
+          }}
+          className="min-w-24 p-5"
+        />
       </div>
       <Divider />
       <div>{children}</div>

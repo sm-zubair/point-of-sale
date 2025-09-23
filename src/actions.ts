@@ -1,146 +1,173 @@
 'use server';
+import { Prisma, PrismaClient } from '@prisma/client';
+import * as fs from 'fs';
 
-import { instanceToPlain } from 'class-transformer';
-import fs from 'fs';
-import 'reflect-metadata';
-import {
-  DataSource,
-  DeepPartial,
-  FindManyOptions,
-  FindOneOptions,
-  FindOptionsWhere,
-  IsNull,
-  QueryRunner,
-} from 'typeorm';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
-import OrderStatus from './constants/order-status';
-import * as Entities from './database/entities';
-import { Order, OrderDetail } from './database/entities';
-import DeletedOrder from './database/entities/deleted-order.entity';
-import * as migrations from './database/migrations';
-import uuid from './helpers/uuid';
+const prisma = new PrismaClient();
 
-const dataSource = new DataSource({
-  type: 'mysql',
-  database: process.env.DATABASE_NAME,
-  host: 'localhost',
-  port: 3306,
-  username: process.env.DATABASE_USERNAME,
-  password: process.env.DATABASE_PASSWORD,
-  ssl: false,
-  logging: true,
-  entities: Object.values(Entities),
-  // subscribers: Object.values(subscribers) ?? [],
-  migrations: migrations,
-  migrationsTransactionMode: 'all',
-  migrationsRun: false,
-  // synchronize: false,
-  extra: {
-    connectionLimit: 10, // Limit the number of connections in the pool
-    connectTimeout: 10000, // 10 seconds
-  },
+const db = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
 });
 
-export async function runMigrations() {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  await dataSource.runMigrations();
+//Shifts
+export async function getShifts(options: Prisma.shiftsFindManyArgs) {
+  const shifts = await db.shifts.findMany(options);
+  return shifts;
+}
+export async function getShift(options: Prisma.shiftsFindFirstArgs) {
+  return await db.shifts.findFirst(options);
+}
+export async function createShift(params: Prisma.shiftsCreateArgs) {
+  params.data = {
+    ...params.data,
+    openingBalance: parseInt(params.data.openingBalance.toString()),
+  };
+  return await db.shifts.create(params);
 }
 
-export async function get<N extends keyof typeof Entities, T extends InstanceType<(typeof Entities)[N]>>(
-  name: N,
-  options: FindOneOptions<T>
-) {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const result = await dataSource.getRepository<T>(dataSource.getMetadata(name).target).findOne(options);
-  return instanceToPlain(result) as T;
+//Staff
+export async function getStaff(options: Prisma.staffFindManyArgs) {
+  return await db.staff.findMany(options);
+}
+export async function createStaff(params: Prisma.staffCreateArgs) {
+  params.data = {
+    ...params.data,
+    commission: parseInt(params.data.commission.toString()),
+  };
+  return await db.staff.create(params);
+}
+export async function updateStaff(params: Prisma.staffUpdateArgs) {
+  params.data = {
+    ...params.data,
+    commission: parseInt(params.data.commission.toString()),
+  };
+  return await db.staff.update(params);
+}
+export async function removeStaff(options: Prisma.staffDeleteArgs) {
+  return await db.staff.delete(options);
 }
 
-export async function getAll<N extends keyof typeof Entities, T extends InstanceType<(typeof Entities)[N]>>(
-  name: N,
-  options: FindManyOptions<T>
-) {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const result = await dataSource.getRepository<T>(dataSource.getMetadata(name).target).find(options);
-  return instanceToPlain(result) as T[];
+//Categories
+export async function getCategories(params: Prisma.categoriesFindManyArgs) {
+  return db.categories.findMany(params);
+}
+export async function createCategory(params: Prisma.categoriesCreateArgs) {
+  params.data = {
+    ...params.data,
+    price: parseInt(params.data.price.toString()),
+    order: parseInt(params.data.order.toString()),
+  };
+  return await db.categories.create(params);
+}
+export async function updateCategory(params: Prisma.categoriesUpdateArgs) {
+  params.data = {
+    ...params.data,
+    price: parseInt(params.data.price.toString()),
+    order: parseInt(params.data.order.toString()),
+  };
+  return await db.categories.update(params);
+}
+export async function removeCategory(options: Prisma.categoriesDeleteArgs) {
+  return await db.categories.delete(options);
 }
 
-export async function create<N extends keyof typeof Entities, T extends InstanceType<(typeof Entities)[N]>>(
-  name: N,
-  entity: DeepPartial<T>
-) {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const repository = dataSource.getRepository<T>(dataSource.getMetadata(name).target);
-  entity = repository.create({
-    ...entity,
+//accounts
+export async function getAccounts(params: Prisma.accountsFindManyArgs) {
+  return db.accounts.findMany(params);
+}
+export async function createAccount(params: Prisma.accountsCreateArgs) {
+  return await db.accounts.create(params);
+}
+export async function updateAccount(params: Prisma.accountsUpdateArgs) {
+  return await db.accounts.update(params);
+}
+export async function removeAccount(options: Prisma.accountsDeleteArgs) {
+  return await db.accounts.delete(options);
+}
+
+//Items
+export async function getItems(params: Prisma.itemsFindManyArgs) {
+  return db.items.findMany(params);
+}
+export async function createItem(params: Prisma.itemsCreateArgs) {
+  params.data = {
+    ...params.data,
+    price: parseInt(params.data.price.toString()),
+    order: parseInt(params.data.order.toString()),
+  };
+  return await db.items.create(params);
+}
+export async function updateItem(params: Prisma.itemsUpdateArgs) {
+  params.data = {
+    ...params.data,
+    price: parseInt(params.data.price.toString()),
+    order: parseInt(params.data.order.toString()),
+  };
+  return await db.items.update(params);
+}
+export async function removeItem(options: Prisma.itemsDeleteArgs) {
+  return await db.items.delete(options);
+}
+
+//Discounts
+export async function getDiscounts(params: Prisma.discountsFindManyArgs) {
+  return db.discounts.findMany(params);
+}
+export async function createDiscount(params: Prisma.discountsCreateArgs) {
+  params.data = {
+    ...params.data,
+    value: parseInt(params.data.value.toString()),
+  };
+  return await db.discounts.create(params);
+}
+export async function updateDiscount(params: Prisma.discountsUpdateArgs) {
+  params.data = {
+    ...params.data,
+    value: parseInt(params.data.value.toString()),
+  };
+  return await db.discounts.update(params);
+}
+export async function removeDiscount(options: Prisma.discountsDeleteArgs) {
+  return await db.discounts.delete(options);
+}
+
+//orders
+export async function getOrders(params: Prisma.ordersFindManyArgs) {
+  return db.orders.findMany(params);
+}
+export async function createOrder(params: Prisma.ordersCreateArgs) {
+  return await db.orders.create(params);
+}
+export async function updateOrder(params: Prisma.ordersUpdateArgs) {
+  return await db.orders.update(params);
+}
+export async function removeOrder(options: Prisma.ordersDeleteArgs) {
+  return await db.orders.delete(options);
+}
+export async function removeOrderDetails(options: Prisma.order_detailsDeleteManyArgs) {
+  return await db.order_details.deleteMany(options);
+}
+
+//customers
+export async function getUniqueCustomers() {
+  return db.orders.findMany({
+    distinct: 'customer',
+    select: {
+      customer: true,
+    },
+    where: {
+      customer: {
+        not: null,
+      },
+    },
   });
-  entity.id = entity?.id || uuid();
-  return instanceToPlain(await repository.save(entity)) as T;
 }
 
-export async function update<N extends keyof typeof Entities, T extends InstanceType<(typeof Entities)[N]>>(
-  name: N,
-  criteria: FindOptionsWhere<T>,
-  entity: QueryDeepPartialEntity<T>
-) {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const repository = dataSource.getRepository<T>(dataSource.getMetadata(name).target);
-  const result = await repository.update(criteria, entity);
-  return !!result.affected;
+//order_deletes
+export async function createOrderDelete(params: Prisma.deleted_ordersCreateArgs) {
+  return await db.deleted_orders.create(params);
 }
 
-export async function remove<N extends keyof typeof Entities, T extends InstanceType<(typeof Entities)[N]>>(
-  name: N,
-  criteria: FindOptionsWhere<T>
-) {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const repository = dataSource.getRepository<T>(dataSource.getMetadata(name).target);
-  const result = await repository.delete(criteria);
-  return !!result.affected;
-}
-
-export async function query<T = any>(query: string, parameters?: any[], queryRunner?: QueryRunner): Promise<T> {
-  if (!dataSource.isInitialized) await dataSource.initialize();
-  const result = await dataSource.query(query, parameters);
-  return result;
-}
-
-export async function updateOrder(id: string, order: DeepPartial<Order>, orderDetails: DeepPartial<OrderDetail>[]) {
-  try {
-    return await dataSource.transaction(async (manager) => {
-      const orderRepositoy = manager.getRepository(Order);
-      const orderDetailsRepository = manager.getRepository(OrderDetail);
-      await orderRepositoy.update({ id }, order);
-      await orderDetailsRepository.delete({ orderId: id });
-      await orderDetailsRepository.save(orderDetails);
-      return instanceToPlain(await orderRepositoy.findOne({ where: { id }, relations: { items: true } }));
-    });
-  } catch (e) {
-    console.log(e);
-    return null;
-  }
-}
-
-export async function deleteOrder(id: string, reason: string, status: OrderStatus) {
-  try {
-    return await dataSource.transaction(async (manager) => {
-      const order = await manager.getRepository(Order).findOne({ where: { id }, relations: { items: true } });
-      if (!order) return null;
-      await manager.getRepository(OrderDetail).delete({ orderId: id });
-      await manager.getRepository(Order).delete({ id });
-      await manager.getRepository(DeletedOrder).save({
-        ...order,
-        items: order.items,
-        reason,
-        status,
-      });
-      return true;
-    });
-  } catch (e) {
-    console.log(e);
-    return false;
-  }
-}
-
+//Notes
 export async function saveNotes(notes: string) {
   //write txt file for notes
   fs.writeFileSync('notes.txt', notes);
@@ -149,8 +176,4 @@ export async function saveNotes(notes: string) {
 export async function getNotes() {
   //read txt file for notes
   return fs.readFileSync('notes.txt', 'utf8');
-}
-
-export async function getCurrentShift() {
-  return await get('Shift', { where: { closeAt: IsNull() } });
 }

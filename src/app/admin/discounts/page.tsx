@@ -1,5 +1,6 @@
 'use client';
 
+import type { categories as Category, discounts as Discount, items as Item } from '@prisma/client';
 import { useFormik } from 'formik';
 import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
@@ -15,15 +16,22 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { create, getAll, remove, update } from '../../../actions';
-import { Category, Discount } from '../../../database/entities';
+import {
+  createDiscount,
+  getCategories,
+  getDiscounts,
+  getItems,
+  removeDiscount,
+  updateDiscount,
+} from '../../../actions';
 import notify from '../../../helpers/notify';
+import uuid from '../../../helpers/uuid';
 
 export default function DiscountsPage() {
   const [globalFilterValue, setGlobalFilterValue] = useState('');
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -58,7 +66,7 @@ export default function DiscountsPage() {
     onSubmit: async (values) => {
       try {
         if (selectedItem) {
-          const item = await update('Discount', { id: selectedItem.id }, values);
+          const item = await updateDiscount({ where: { id: selectedItem.id }, data: values });
           if (item) {
             const _discounts = discounts.filter((i) => i.id !== selectedItem.id);
             _discounts.push({ ...selectedItem, ...values });
@@ -66,7 +74,7 @@ export default function DiscountsPage() {
             notify('info', 'Discount updated', 'Success');
           }
         } else {
-          const discount = await create('Discount', values);
+          const discount = await createDiscount({ data: { id: uuid(), ...values } });
           notify('success', 'Discount added', 'Success');
           setDiscounts([...discounts, discount]);
         }
@@ -93,9 +101,9 @@ export default function DiscountsPage() {
 
   useEffect(() => {
     (async () => {
-      const categories = await getAll('Category', { select: { id: true, name: true }, order: { name: 'ASC' } });
-      const items = await getAll('Item', { select: { id: true, name: true }, order: { name: 'ASC' } });
-      const discounts = await getAll('Discount', {});
+      const categories = await getCategories({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
+      const items = await getItems({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
+      const discounts = await getDiscounts({});
       setCategories(categories);
       setItems(items);
       setDiscounts(discounts);
@@ -192,7 +200,7 @@ export default function DiscountsPage() {
                   disabled={!selectedItem}
                   onClick={async () => {
                     if (!window.confirm('Are you sure you want to delete this discount?')) return;
-                    const result = await remove('Discount', { id: selectedItem.id });
+                    const result = await removeDiscount({ where: { id: selectedItem.id } });
                     if (result) {
                       const _discounts = discounts.filter((i) => i.id !== selectedItem.id);
                       setDiscounts(_discounts);
@@ -236,7 +244,6 @@ export default function DiscountsPage() {
               filters={filters}
               selectionMode="single"
               onSelectionChange={(e) => setSelectedItem(e.value)}
-              className="compact-table"
             >
               <Column field="name" header="Name" style={{ width: '200px' }} />
               <Column field="value" header="Value" align="center" style={{ textAlign: 'center', width: '100px' }} />
@@ -252,6 +259,15 @@ export default function DiscountsPage() {
                       className={`block! font-bold ${rowData.isActive ? 'text-green-500' : 'text-red-500'}`}
                     />
                   );
+                }}
+              />
+              <Column
+                field="autoApply"
+                header="Auto Apply"
+                align="center"
+                style={{ textAlign: 'center', width: '100px' }}
+                body={(rowData) => {
+                  return <Chip label={rowData.autoApply ? 'Auto' : 'Manual'} className={`block! font-bold`} />;
                 }}
               />
               <Column

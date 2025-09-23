@@ -3,7 +3,6 @@
 import { useFormik } from 'formik';
 import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
-import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Divider } from 'primereact/divider';
@@ -13,14 +12,14 @@ import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createStaff, getStaff, removeStaff, updateStaff } from '../../../actions';
+import { createAccount, getAccounts, removeAccount, updateAccount } from '../../../actions';
 import notify from '../../../helpers/notify';
 import uuid from '../../../helpers/uuid';
 
-export default function StaffPage() {
+export default function AccountsPage() {
   const [globalFilterValue, setGlobalFilterValue] = useState('');
-  const [staff, setStaff] = useState([]);
-  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -37,47 +36,38 @@ export default function StaffPage() {
   const formik = useFormik({
     initialValues: {
       name: '',
-      phone: '',
-      commission: 0,
-      isServing: false,
     },
     validationSchema: Yup.object({
       name: Yup.string().required(),
-      phone: Yup.string().required(),
-      commission: Yup.number().required(),
-      isServing: Yup.boolean().required(),
     }),
     onSubmit: async (values) => {
       try {
-        if (selectedStaff) {
-          const item = await updateStaff({
+        if (selectedAccount) {
+          const item = await updateAccount({
             where: {
-              id: selectedStaff.id,
+              id: selectedAccount.id,
             },
             data: {
               name: values.name,
-              phone: values.phone,
-              commission: 100,
-              isServing: values.isServing,
             },
           });
           if (item) {
-            const _staff = staff.filter((c) => c.id !== selectedStaff.id);
-            _staff.push({ ...selectedStaff, ...values });
-            setStaff(_staff);
-            notify('success', 'Staff updated', 'Success');
+            const _accounts = accounts.filter((c) => c.id !== selectedAccount.id);
+            _accounts.unshift({ ...selectedAccount, ...values });
+            setAccounts(_accounts);
+            notify('success', 'Account updated', 'Success');
           }
         } else {
-          const item = await createStaff({
+          const item = await createAccount({
             data: {
               id: uuid(),
-              ...values,
+              name: values.name,
             },
           });
-          notify('success', 'Staff added', 'Success');
-          setStaff([...staff, item]);
+          notify('success', 'Account added', 'Success');
+          setAccounts([item, ...accounts]);
         }
-        setSelectedStaff(null);
+        setSelectedAccount(null);
         formik.resetForm();
       } catch (e: any) {
         notify('error', 'Error', e.message);
@@ -86,28 +76,31 @@ export default function StaffPage() {
   });
 
   useEffect(() => {
-    if (selectedStaff) {
+    if (selectedAccount) {
       formik.setValues({
-        name: selectedStaff.name,
-        phone: selectedStaff.phone,
-        commission: selectedStaff.commission,
-        isServing: selectedStaff.isServing,
+        name: selectedAccount.name,
       });
     }
-  }, [selectedStaff]);
+  }, [selectedAccount]);
 
   useEffect(() => {
-    getStaff({ orderBy: { name: 'asc' } }).then((staff) => setStaff(staff));
+    getAccounts({
+      orderBy: {
+        name: 'asc',
+      },
+    }).then((accounts) => {
+      setAccounts(accounts);
+    });
   }, []);
 
   return (
     <>
-      <Fieldset legend="Add / Edit Staff" className="min-h-[768px]">
+      <Fieldset legend="Add / Edit Category" className="min-h-[768px]">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <div className="flex flex-col gap-4">
               <IconField iconPosition="left">
-                <InputIcon className="pi pi-barcode" />
+                <InputIcon className="pi pi-address-book" />
                 <InputText
                   placeholder="Name"
                   name="name"
@@ -117,59 +110,23 @@ export default function StaffPage() {
                   {...formik.getFieldProps('name')}
                 />
               </IconField>
-              <IconField iconPosition="left">
-                <InputIcon className="pi pi-dollar" />
-                <InputText
-                  keyfilter="int"
-                  placeholder="Commission"
-                  name="commission"
-                  className="w-full"
-                  autoComplete="off"
-                  invalid={formik.errors.commission ? true : false}
-                  {...formik.getFieldProps('commission')}
-                />
-              </IconField>
-              <IconField iconPosition="left">
-                <InputIcon className="pi pi-sort-numeric-up" />
-                <InputText
-                  keyfilter="int"
-                  placeholder="Phone"
-                  name="phone"
-                  className="w-full"
-                  autoComplete="off"
-                  invalid={formik.errors.phone ? true : false}
-                  {...formik.getFieldProps('phone')}
-                />
-              </IconField>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  inputId="isServing"
-                  name="isServing"
-                  checked={formik.values.isServing || false}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                />
-                <label htmlFor="isServing" className="cursor-pointer font-bold">
-                  Is Serving
-                </label>
-              </div>
               <Divider />
               <div className="flex justify-between">
                 <Button
                   label="Delete"
                   severity="danger"
                   type="button"
-                  disabled={!selectedStaff}
+                  disabled={!selectedAccount}
                   onClick={async () => {
-                    if (!window.confirm('Are you sure you want to delete this staff?')) return;
-                    const result = await removeStaff({ where: { id: selectedStaff.id } });
+                    if (!window.confirm('Are you sure you want to delete this account?')) return;
+                    const result = await removeAccount({ where: { id: selectedAccount.id } });
                     if (result) {
-                      const _staff = staff.filter((c) => c.id !== selectedStaff.id);
-                      setStaff(_staff);
-                      notify('success', 'Staff deleted', 'Success');
+                      const _accounts = accounts.filter((c) => c.id !== selectedAccount.id);
+                      setAccounts(_accounts);
+                      notify('success', 'Account deleted', 'Success');
                     }
                     formik.resetForm();
-                    setSelectedStaff(null);
+                    setSelectedAccount(null);
                   }}
                 />
                 <div className="flex gap-4">
@@ -179,12 +136,12 @@ export default function StaffPage() {
                     type="button"
                     onClick={() => {
                       formik.resetForm();
-                      setSelectedStaff(null);
+                      setSelectedAccount(null);
                     }}
                   />
 
                   <Button
-                    label={selectedStaff ? 'Update' : 'Add'}
+                    label={selectedAccount ? 'Update' : 'Add'}
                     severity="success"
                     type="submit"
                     loading={formik.isSubmitting}
@@ -199,7 +156,7 @@ export default function StaffPage() {
           <div className="col-span-2">
             <DataTable
               dataKey="id"
-              value={staff}
+              value={accounts}
               paginator
               rows={10}
               globalFilterFields={['name']}
@@ -217,17 +174,15 @@ export default function StaffPage() {
                 </IconField>
               }
               selectionMode="single"
-              onSelectionChange={(e) => setSelectedStaff(e.value)}
+              onSelectionChange={(e) => setSelectedAccount(e.value)}
               pt={{
                 header: {
                   className: 'p-0 px-2',
                 },
               }}
             >
-              <Column field="name" header="Name"></Column>
-              <Column field="phone" header="Phone"></Column>
-              <Column field="commission" header="Commission"></Column>
-              <Column field="isServing" header="Is Serving"></Column>
+              <Column field="id" header="ID" style={{ width: '40%' }} />
+              <Column field="name" header="Name" sortable />
             </DataTable>
           </div>
         </div>

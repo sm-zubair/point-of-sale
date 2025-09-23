@@ -1,5 +1,4 @@
 import { PrimeReactProvider } from 'primereact/api';
-import { runMigrations } from '../actions';
 import { AuthProvider } from '../components/auth-context';
 import Notification from '../components/notification';
 import '../global.css';
@@ -10,12 +9,12 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  runMigrations();
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <base href="/" />
       </head>
       <body>
         <PrimeReactProvider>

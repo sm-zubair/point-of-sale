@@ -8,16 +8,14 @@ import { Fieldset } from 'primereact/fieldset';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useEffect, useMemo, useState } from 'react';
-import { DeepPartial } from 'typeorm';
-import { create, getAll, getNotes, saveNotes, update } from '../actions';
-import Shift from '../database/entities/shift.entity';
-import Staff from '../database/entities/staff.entity';
+import { createShift, getNotes, getShifts, getStaff } from '../actions';
 import notify from '../helpers/notify';
+import uuid from '../helpers/uuid';
 
 export default function Home() {
   const router = useRouter();
   const [shifts, setShifts] = useState([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [staff, setStaff] = useState([]);
   const [notes, setNotes] = useState('');
 
   const [_5000, set_5000] = useState<Number>(0);
@@ -28,8 +26,8 @@ export default function Home() {
   const [_20, set_20] = useState<Number>(0);
   const [_10, set_10] = useState<Number>(0);
   const [counterConfirm, setCounterConfirm] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<DeepPartial<Shift>>(null);
-  const [selectedStaff, setSelectedStaff] = useState<DeepPartial<Staff>>(null);
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState(null);
   const [balance, setBalance] = useState<number>(0);
 
   const total = useMemo(() => {
@@ -80,10 +78,10 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       const shifts = (
-        await getAll('Shift', {
+        await getShifts({
           take: 3,
-          order: { openAt: 'DESC' },
-          relations: {
+          orderBy: { openAt: 'desc' },
+          include: {
             statistics: true,
             sales: true,
           },
@@ -103,7 +101,7 @@ export default function Home() {
           openAt: formatted,
         };
       });
-      const staff = await getAll('Staff', { where: { isServing: false } });
+      const staff = await getStaff({ where: { isServing: false }, orderBy: { name: 'asc' } });
       const notes = await getNotes();
       setShifts(shifts);
       setStaff(staff);
@@ -356,7 +354,7 @@ export default function Home() {
                   setNotes(e.target.value);
                 }}
               />
-              <Button label="Save" onClick={() => saveNotes(notes)} outlined className="mt-2 w-full" />
+              {/* <Button label="Save" onClick={() => saveNotes(notes)} outlined className="mt-2 w-full" /> */}
             </Fieldset>
           </div>
         </div>
@@ -391,28 +389,35 @@ export default function Home() {
                 onClick={async () => {
                   try {
                     if (currentShift) {
-                      //close shift
-                      const shift = await update('Shift', currentShift.id, {
-                        closingStaff: selectedStaff.name,
-                        closeAt: new Date(),
-                        closingBalance: balance,
-                      });
-                      notify('success', 'Shift closed', 'Success');
-                      const _shifts = shifts.filter((x) => x.id !== currentShift.id);
-                      _shifts.unshift({
-                        ...currentShift,
-                        closeAt: new Date(),
-                        closingBalance: balance,
-                      });
-                      setShifts(_shifts);
-                      setSelectedShift(null);
+                      // //close shift
+                      // const shift = await prisma.shifts.update({
+                      //   where: { id: currentShift.id },
+                      //   data: {
+                      //     closingStaff: selectedStaff.name,
+                      //     closeAt: new Date(),
+                      //     closingBalance: balance,
+                      //   },
+                      // });
+                      // notify('success', 'Shift closed', 'Success');
+                      // const _shifts = shifts.filter((x) => x.id !== currentShift.id);
+                      // _shifts.unshift({
+                      //   ...currentShift,
+                      //   closeAt: new Date(),
+                      //   closingBalance: balance,
+                      // });
+                      // setShifts(_shifts);
+                      // setSelectedShift(null);
                     } else {
                       //open shift
-                      const shift = await create('Shift', {
-                        openingStaff: selectedStaff.name,
-                        openAt: new Date(),
-                        openingBalance: balance,
+                      const shift = await createShift({
+                        data: {
+                          id: uuid(),
+                          openingStaff: selectedStaff.name,
+                          openingBalance: balance,
+                          openAt: new Date(),
+                        },
                       });
+                      console.log(shift);
                       setShifts([
                         {
                           ...shift,
@@ -441,6 +446,8 @@ export default function Home() {
               />
             </div>
           )}
+          draggable={false}
+          resizable={false}
         >
           <div className="grid grid-cols-1 gap-4">
             <div className="p-inputgroup">

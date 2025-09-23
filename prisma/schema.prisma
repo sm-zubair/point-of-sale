@@ -1,0 +1,180 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["views"]
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model categories {
+    id         String   @id @db.VarChar(36)
+    name       String   @db.VarChar(128)
+    price      Int      @default(0)
+    order      Int      @default(0)
+    categoryId String?  @db.VarChar(128)
+    createdAt  DateTime @default(now()) @db.DateTime(0)
+    updatedAt  DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_24dbc6126a28ff948da33e97d3")
+}
+
+model accounts {
+    id        String   @id @db.VarChar(36)
+    name      String   @db.VarChar(128)
+    createdAt DateTime @default(now()) @db.DateTime(0)
+    updatedAt DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_24dbc6126a28ff948da33e97d4")
+}
+
+model deleted_orders {
+    id          String   @id @db.VarChar(36)
+    orderNumber String   @db.VarChar(128)
+    type        String   @db.VarChar(128)
+    status      String   @db.VarChar(128)
+    reason      String   @db.VarChar(512)
+    total       Int      @default(0)
+    discount    Int      @default(0)
+    commission  Int      @default(0)
+    net         Int      @default(0)
+    items       Json
+    waiter      String?  @db.VarChar(128)
+    payment     String?  @db.VarChar(128)
+    createdAt   DateTime @default(now()) @db.DateTime(0)
+    updatedAt   DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_2011f80e5e7e6c0cc802da2500")
+}
+
+model discounts {
+    id         String   @id @db.VarChar(36)
+    name       String   @db.VarChar(128)
+    value      Int      @default(0)
+    items      Json?
+    categories Json?
+    isActive   Boolean  @default(false)
+    autoApply  Boolean  @default(true)
+    createdAt  DateTime @default(now()) @db.DateTime(0)
+    updatedAt  DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_66c522004212dc814d6e2f14ec")
+}
+
+model items {
+    id         String   @id @db.VarChar(36)
+    name       String   @db.VarChar(128)
+    price      Int      @default(0)
+    order      Int      @default(0)
+    categories Json?
+    tags       Json?
+    createdAt  DateTime @default(now()) @db.DateTime(0)
+    updatedAt  DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_ba5885359424c15ca6b9e79bcf")
+}
+
+model migrations {
+    id        Int    @id @default(autoincrement())
+    timestamp BigInt
+    name      String @db.VarChar(255)
+}
+
+model order_details {
+    orderId       String @db.VarChar(36)
+    itemId        String @db.VarChar(36)
+    categoryId    String @db.VarChar(36)
+    category      String @db.VarChar(128)
+    name          String @db.VarChar(128)
+    quantity      Int    @default(0)
+    price         Int    @default(0)
+    originalPrice Int    @default(0)
+    totalAmount   Int    @default(0)
+    order         orders @relation("Order_OrderDetails", fields: [orderId], references: [id], onDelete: Cascade, map: "fk_order_details_order")
+
+    @@id([orderId, itemId, categoryId])
+    @@index([orderId, itemId, categoryId], map: "IDX_3d2bea6797aab2d1248a4827e7")
+}
+
+model orders {
+    id            String          @id @db.VarChar(36)
+    orderNumber   String          @db.VarChar(128)
+    type          String          @db.VarChar(128)
+    status        String          @db.VarChar(128)
+    waiter        String?         @db.VarChar(128)
+    customer      String?         @db.VarChar(128)
+    payment       String?         @db.VarChar(128)
+    total         Int             @default(0)
+    discountValue Int             @default(0)
+    commission    Int             @default(0)
+    tip           Int             @default(0)
+    net           Int             @default(0)
+    shiftId       String          @db.VarChar(36)
+    createdAt     DateTime        @default(now()) @db.DateTime(0)
+    updatedAt     DateTime        @default(now()) @db.DateTime(0)
+    discounts     Json?           @db.Json
+    items         order_details[] @relation("Order_OrderDetails")
+
+    @@index([id, shiftId], map: "IDX_75531bd58d48f8818039c5b4ce")
+}
+
+model shifts {
+    id             String        @id @db.VarChar(36)
+    openAt         DateTime      @default(now()) @db.DateTime(0)
+    closeAt        DateTime?     @db.DateTime(0)
+    openingStaff   String        @db.VarChar(128)
+    closingStaff   String?       @db.VarChar(128)
+    openingBalance Int
+    closingBalance Int?
+    createdAt      DateTime      @default(now()) @db.DateTime(0)
+    updatedAt      DateTime      @default(now()) @db.DateTime(0)
+    statistics     statistics?   @relation(fields: [id], references: [shiftId], map: "fk_shift_statistics")
+    sales          shift_sales[] @relation("ShiftSales")
+
+    @@index([id], map: "IDX_84d692e367e4d6cdf045828768")
+}
+
+model staff {
+    id         String   @id @db.VarChar(36)
+    name       String   @db.VarChar(128)
+    phone      String   @db.VarChar(128)
+    commission Int      @default(0)
+    isServing  Boolean  @default(true)
+    createdAt  DateTime @default(now()) @db.DateTime(0)
+    updatedAt  DateTime @default(now()) @db.DateTime(0)
+
+    @@index([id], map: "IDX_e4ee98bb552756c180aec1e854")
+}
+
+view shift_sales {
+    shiftId          String  @db.VarChar(36)
+    waiter           String? @db.VarChar(128)
+    waiterNetSales   Int?    @db.Int
+    waiterCommission Int?    @db.Int
+    dineIn           Int?    @db.Int
+    grossDineIn      Int?    @db.Int
+    takeAway         Int?    @db.Int
+    grossTakeAway    Int?    @db.Int
+    delivery         Int?    @db.Int
+    grossDelivery    Int?    @db.Int
+    shifts           shifts? @relation("ShiftSales", fields: [shiftId], references: [id], map: "fk_shift_sales")
+
+    @@map("shift_sales")
+}
+
+view statistics {
+    shiftId     String   @unique @db.VarChar(36)
+    totalOrders BigInt   @default(0)
+    dineIn      Int?     @db.Int
+    takeAway    Int?     @db.Int
+    delivery    Int?     @db.Int
+    cash        Int?     @db.Int
+    bank        Int?     @db.Int
+    online      Int?     @db.Int
+    onlineDue   Int?     @db.Int
+    credit      Int?     @db.Int
+    shifts      shifts[]
+
+    @@map("statistics")
+}

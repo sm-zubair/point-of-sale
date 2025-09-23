@@ -14,8 +14,9 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { create, getAll, remove, update } from '../../../actions';
+import { createItem, getCategories, getItems, removeItem, updateItem } from '../../../actions';
 import notify from '../../../helpers/notify';
+import uuid from '../../../helpers/uuid';
 
 export default function ItemsPage() {
   const [globalFilterValue, setGlobalFilterValue] = useState('');
@@ -53,7 +54,7 @@ export default function ItemsPage() {
     onSubmit: async (values) => {
       try {
         if (selectedItem) {
-          const item = await update('Item', { id: selectedItem.id }, values);
+          const item = await updateItem({ where: { id: selectedItem.id }, data: values });
           if (item) {
             const _items = items.filter((i) => i.id !== selectedItem.id);
             _items.push({ ...selectedItem, ...values });
@@ -61,7 +62,7 @@ export default function ItemsPage() {
             notify('info', 'Item updated', 'Success');
           }
         } else {
-          const item = await create('Item', values);
+          const item = await createItem({ data: { id: uuid(), ...values } });
           notify('success', 'Item added', 'Success');
           setItems([...items, item]);
         }
@@ -86,8 +87,8 @@ export default function ItemsPage() {
   }, [selectedItem]);
 
   useEffect(() => {
-    getAll('Category', {}).then((categories) => {
-      getAll('Item', {}).then((items) => {
+    getCategories({}).then((categories) => {
+      getItems({}).then((items) => {
         setCategories(categories);
         setItems(items);
       });
@@ -166,7 +167,7 @@ export default function ItemsPage() {
                   disabled={!selectedItem}
                   onClick={async () => {
                     if (!window.confirm('Are you sure you want to delete this item?')) return;
-                    const result = await remove('Item', { id: selectedItem.id });
+                    const result = await removeItem({ where: { id: selectedItem.id } });
                     if (result) {
                       const _items = items.filter((i) => i.id !== selectedItem.id);
                       setItems(_items);
