@@ -108,7 +108,7 @@ export default function POS() {
               payment: values.payment,
               commission: values.commission,
               total,
-              discountValue: discount,
+              discountValue: Math.ceil(discount),
               net,
               shiftId: currentShift.id,
               discounts: values.discounts,
@@ -887,7 +887,7 @@ export default function POS() {
                     {!order.values.categoryId &&
                       categories.map((c) => {
                         return (
-                          c.categoryId === null && (
+                          (c.parents as string[]).length === 0 && (
                             <Button
                               key={c.id}
                               label={c.name}
@@ -909,7 +909,7 @@ export default function POS() {
                         />
                         {categories.map((c) => {
                           return (
-                            c.categoryId === order.values.categoryId && (
+                            (c.parents as string[]).includes(order.values.categoryId) && (
                               <Button
                                 key={c.id}
                                 label={c.name}

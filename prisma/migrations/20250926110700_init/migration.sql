@@ -4,7 +4,7 @@ CREATE TABLE `categories` (
     `name` VARCHAR(128) NOT NULL,
     `price` INTEGER NOT NULL DEFAULT 0,
     `order` INTEGER NOT NULL DEFAULT 0,
-    `categoryId` VARCHAR(128) NULL,
+    `parents` JSON NULL,
     `createdAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updatedAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 

@@ -6,11 +6,11 @@ import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Divider } from 'primereact/divider';
-import { Dropdown } from 'primereact/dropdown';
 import { Fieldset } from 'primereact/fieldset';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
+import { MultiSelect } from 'primereact/multiselect';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
 import { createCategory, getCategories, getItems, removeCategory, updateCategory } from '../../../actions';
@@ -20,7 +20,6 @@ import uuid from '../../../helpers/uuid';
 export default function CategoriesPage() {
   const [globalFilterValue, setGlobalFilterValue] = useState('');
   const [categories, setCategories] = useState([]);
-  const [items, setItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -40,13 +39,13 @@ export default function CategoriesPage() {
       name: '',
       price: 0,
       order: 0,
-      categoryId: null,
+      parents: [],
     },
     validationSchema: Yup.object({
       name: Yup.string().required(),
       order: Yup.number().required(),
       price: Yup.number().required(),
-      categoryId: Yup.string().optional().nullable(),
+      parents: Yup.array().optional().nullable(),
     }),
     onSubmit: async (values) => {
       try {
@@ -59,12 +58,12 @@ export default function CategoriesPage() {
               name: values.name,
               price: values.price,
               order: values.order,
-              categoryId: values.categoryId ?? null,
+              parents: values.parents ?? null,
             },
           });
           if (item) {
             const _categories = categories.filter((c) => c.id !== selectedCategory.id);
-            _categories.unshift({ ...values, ...selectedCategory });
+            _categories.unshift({ ...selectedCategory, ...values });
             setCategories(_categories);
             notify('success', 'Category updated', 'Success');
           }
@@ -75,7 +74,7 @@ export default function CategoriesPage() {
               name: values.name,
               price: values.price,
               order: values.order,
-              categoryId: values.categoryId ?? null,
+              parents: values.parents ?? null,
             },
           });
           notify('success', 'Category added', 'Success');
@@ -95,7 +94,7 @@ export default function CategoriesPage() {
         name: selectedCategory.name,
         price: selectedCategory.price,
         order: selectedCategory.order,
-        categoryId: selectedCategory.categoryId,
+        parents: selectedCategory.parents,
       });
     }
   }, [selectedCategory]);
@@ -151,12 +150,12 @@ export default function CategoriesPage() {
                   {...formik.getFieldProps('order')}
                 />
               </IconField>
-              <Dropdown
+              <MultiSelect
                 options={categories}
                 placeholder="Parent Category"
                 optionLabel="name"
                 optionValue="id"
-                {...formik.getFieldProps('categoryId')}
+                {...formik.getFieldProps('parents')}
               />
               <Divider />
               <div className="flex justify-between">
@@ -243,11 +242,11 @@ export default function CategoriesPage() {
               <Column field="order" header="Order" sortable style={{ width: '80px' }} />
               <Column field="name" header="Name" style={{ width: '200px' }} />
               <Column
-                field="categoryId"
+                field="parents"
                 header="Category"
                 body={(rowData) => {
-                  const category = categories.find((c) => c.id === rowData.categoryId);
-                  return category ? category.name : '';
+                  const _parents = rowData.parents.map((p) => categories.find((c) => c.id === p));
+                  return _parents.map((p) => p.name).join(', ');
                 }}
                 style={{ width: '200px' }}
               />

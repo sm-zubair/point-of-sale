@@ -9,13 +9,13 @@ datasource db {
 }
 
 model categories {
-    id         String   @id @db.VarChar(36)
-    name       String   @db.VarChar(128)
-    price      Int      @default(0)
-    order      Int      @default(0)
-    categoryId String?  @db.VarChar(128)
-    createdAt  DateTime @default(now()) @db.DateTime(0)
-    updatedAt  DateTime @default(now()) @db.DateTime(0)
+    id        String   @id @db.VarChar(36)
+    name      String   @db.VarChar(128)
+    price     Int      @default(0)
+    order     Int      @default(0)
+    parents   Json?
+    createdAt DateTime @default(now()) @db.DateTime(0)
+    updatedAt DateTime @default(now()) @db.DateTime(0)
 
     @@index([id], map: "IDX_24dbc6126a28ff948da33e97d3")
 }
