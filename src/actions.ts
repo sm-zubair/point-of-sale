@@ -177,3 +177,23 @@ export async function getNotes() {
   //read txt file for notes
   return fs.readFileSync('notes.txt', 'utf8');
 }
+
+export async function createLedger(params: Prisma.ledgerCreateManyArgs) {
+  return await db.ledger.createMany(params);
+}
+
+export async function getLedger(params: Prisma.ledgerFindManyArgs) {
+  return db.ledger.findMany(params);
+}
+
+export async function getLedgerSums(shiftId: string) {
+  return db.ledger.aggregate({
+    _sum: {
+      credit: true,
+      debit: true,
+    },
+    where: {
+      shiftId: shiftId,
+    },
+  });
+}

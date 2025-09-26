@@ -71,8 +71,21 @@ export default function Home() {
 
     grossTotal = grossDineIn + grossTakeAway + grossDelivery;
     netTotal = dineIn + takeAway + delivery;
+    const debit = selectedShift.viewLedger?.debit || 0;
+    const credit = selectedShift.viewLedger?.credit || 0;
 
-    return { dineIn, takeAway, delivery, grossDineIn, grossTakeAway, grossDelivery, grossTotal, netTotal };
+    return {
+      dineIn,
+      takeAway,
+      delivery,
+      grossDineIn,
+      grossTakeAway,
+      grossDelivery,
+      grossTotal,
+      netTotal,
+      debit,
+      credit,
+    };
   }, [selectedShift]);
 
   useEffect(() => {
@@ -84,6 +97,7 @@ export default function Home() {
           include: {
             statistics: true,
             sales: true,
+            viewLedger: true,
           },
         })
       ).map((x) => {
@@ -242,36 +256,43 @@ export default function Home() {
                 <div className="font-semibold">
                   {selectedShift?.statistics?.delivery.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                 </div>
-                <Divider className="col-span-4" />
+                <Divider className="col-span-4 my-1" />
                 <div className="text-right font-semibold">Cash :</div>
                 <div className="font-semibold">
-                  {(Number(selectedShift?.statistics?.cash) + Number(selectedShift?.openingBalance)).toLocaleString(
-                    'en-US',
-                    {
-                      minimumFractionDigits: 0,
-                    }
-                  )}
-                </div>
-                <div className="text-right font-semibold">Bank :</div>
-                <div className="font-semibold">
-                  {selectedShift?.statistics?.bank.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  {(
+                    Number(selectedShift?.statistics?.cash ?? 0) +
+                    Number(selectedShift?.openingBalance ?? 0) -
+                    Number(sales.credit ?? 0) +
+                    Number(sales.debit ?? 0)
+                  ).toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                  })}
                 </div>
                 <div className="text-right font-semibold">Online :</div>
                 <div className="font-semibold">
-                  {selectedShift?.statistics?.online.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  {selectedShift?.statistics?.online.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
+                </div>
+                <div className="text-right font-semibold">Bank :</div>
+                <div className="font-semibold">
+                  {selectedShift?.statistics?.bank.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
                 </div>
                 <div className="text-right font-semibold">Credit :</div>
                 <div className="font-semibold">
-                  {selectedShift?.statistics?.credit.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  {selectedShift?.statistics?.credit.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
                 </div>
-                <div className="text-right font-semibold">Online Due :</div>
+                {/* <div className="text-right font-semibold">Online Due :</div>
                 <div className="font-semibold">
                   {selectedShift?.statistics?.onlineDue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
-                </div>
+                </div> */}
+                <Divider className="col-span-4" />
                 <div className="text-right font-semibold">Expenses :</div>
-                <div className="font-semibold">-</div>
-                <div className="text-right font-semibold">Profit/Loss :</div>
-                <div className="font-semibold"></div>
+                <div className="font-semibold">
+                  {sales.credit?.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </div>
+                <div className="text-right font-semibold">Deposit :</div>
+                <div className="font-semibold">
+                  {sales.debit?.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </div>
               </div>
             </Fieldset>
           </div>
@@ -377,11 +398,12 @@ export default function Home() {
             <div className="flex items-center justify-between border-0 border-t border-[lightgrey] p-4">
               <Button
                 label="Cancel"
-                onClick={() => {
-                  // setDeleteConfirm(false);
-                  // order.resetForm();
-                }}
                 severity="secondary"
+                onClick={() => {
+                  setCounterConfirm(false);
+                  setSelectedStaff(null);
+                  setBalance(null);
+                }}
               />
               <Button
                 label="Done"

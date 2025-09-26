@@ -1,10 +1,10 @@
 'use client';
-
 import type {
   accounts as Account,
   categories as Category,
   discounts as Discount,
   items as Item,
+  ledger as Ledger,
   orders as Order,
   shifts as Shift,
   staff as Staff,
@@ -22,13 +22,16 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as Yup from 'yup';
 import {
+  createLedger,
   createOrder,
   createOrderDelete,
   getAccounts,
   getCategories,
   getDiscounts,
   getItems,
+  getLedger,
   getOrders,
   getShift,
   getStaff,
@@ -57,6 +60,7 @@ export default function POS() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectCustomer, setSelectCustomer] = useState<boolean>(false);
   const [cashOut, setCashOut] = useState<boolean>(false);
+  const [ledgerRecords, setLedgerRecords] = useState<Ledger[]>([]);
   const tableRef = useRef(null);
 
   const order = useFormik({
@@ -147,19 +151,49 @@ export default function POS() {
     },
   });
 
-  const ledger = useFormik({
+  const cashOutForm = useFormik({
     initialValues: {
-      acount: null,
+      account: null,
       amount: 0,
       description: '',
-      entries: [],
     },
+    validationSchema: Yup.object({
+      account: Yup.string().required(),
+      amount: Yup.number().required(),
+      description: Yup.string().required(),
+    }),
     validateOnBlur: false,
     validateOnChange: false,
-    onSubmit: (values) => {
-      console.log(`🚀 -----------------------------------🚀`);
-      console.log(`🚀 | page.tsx:155 | values:`, values);
-      console.log(`🚀 -----------------------------------🚀`);
+    onSubmit: async (values) => {
+      try {
+        const entries = convertDescriptionToEntries(values.description, 'credit');
+        const totalCredit = entries.reduce((t, e) => t + e.credit, 0);
+        if (totalCredit !== Number(values.amount)) {
+          notify('error', 'Error', 'Amount does not match');
+          return;
+        }
+        const data: Ledger[] = entries.map((x) => ({
+          id: uuid(),
+          account: values.account,
+          date: currentShift.openAt,
+          description: x.description,
+          credit: x.credit,
+          debit: 0,
+          shiftId: currentShift.id,
+        }));
+        if (!data.length) {
+          notify('error', 'Error', 'No entries found');
+          return;
+        }
+        const ledger = await createLedger({ data });
+        if (ledger.count > 0) {
+          setLedgerRecords([...ledgerRecords, ...data]);
+          cashOutForm.resetForm();
+          notify('success', 'Cash out added', 'Success');
+        }
+      } catch (e: any) {
+        notify('error', 'Error', e.message);
+      }
     },
   });
 
@@ -288,7 +322,7 @@ export default function POS() {
         break;
       }
       case 'online': {
-        status = OrderStatus.Due;
+        status = OrderStatus.Paid;
         tip = returnAmount;
         break;
       }
@@ -408,18 +442,20 @@ export default function POS() {
     }
   };
 
-  const convertDescriptionToEntries = () => {
-    const rows = ledger.values.description.split('\n');
+  const convertDescriptionToEntries = (description: string, type: 'debit' | 'credit') => {
+    const rows = description.split('\n');
     const entries = [];
     for (const row of rows) {
       if (!row) continue;
+      if (!row.includes('=')) continue;
       const [desc, amount] = row.split('=');
       entries.push({
         description: desc.trim(),
-        amount: Number(amount.trim()),
+        debit: type === 'debit' ? Number(amount.trim()) : null,
+        credit: type === 'credit' ? Number(amount.trim()) : null,
       });
     }
-    ledger.setFieldValue('entries', entries);
+    return entries;
   };
 
   //visual feedback
@@ -500,6 +536,13 @@ export default function POS() {
             name: 'asc',
           },
         });
+        const ledgerRecords = await getLedger({
+          where: {
+            date: {
+              gte: currentShift.openAt,
+            },
+          },
+        });
 
         setWaiters(waiters);
         setCategories(categories);
@@ -509,6 +552,7 @@ export default function POS() {
         setAppliedDiscounts(discounts.filter((d) => d.autoApply));
         setCustomers(customers.map((c) => c.customer));
         setAccounts(accounts);
+        setLedgerRecords(ledgerRecords);
       } else {
         setCurrentShift(null);
       }
@@ -1312,7 +1356,8 @@ export default function POS() {
             <Button
               label="Done"
               onClick={() => {
-                setCashOut(false);
+                cashOutForm.submitForm();
+                // setCashOut(false);
               }}
               severity="success"
             />
@@ -1322,23 +1367,36 @@ export default function POS() {
         <div className="p-2">
           <div className="grid grid-cols-5 gap-4">
             <div className="col-span-2 flex flex-col gap-4">
-              <Dropdown options={accounts} placeholder="Account" optionLabel="name" />
-              <InputText inputMode="numeric" name="amount" className="w-full" placeholder="Amount" />
+              <Dropdown
+                options={accounts}
+                placeholder="Account"
+                optionLabel="name"
+                optionValue="name"
+                invalid={cashOutForm.errors.account ? true : false}
+                {...cashOutForm.getFieldProps('account')}
+              />
+              <InputText
+                inputMode="numeric"
+                name="amount"
+                className="w-full"
+                placeholder="Amount"
+                invalid={cashOutForm.errors.amount ? true : false}
+                {...cashOutForm.getFieldProps('amount')}
+              />
               <InputTextarea
                 rows={10}
                 className="w-full"
                 placeholder="Break up..."
-                onKeyUp={(e) => {
-                  if (e.key === 'Enter') {
-                    convertDescriptionToEntries();
-                  }
-                }}
-                value={ledger.values.description}
-                onChange={(e) => ledger.setFieldValue('description', e.target.value)}
+                invalid={cashOutForm.errors.description ? true : false}
+                {...cashOutForm.getFieldProps('description')}
               />
             </div>
             <div className="col-span-3">
-              <DataTable value={ledger.values.entries} className="compact-table border border-solid border-[lightgrey]">
+              <DataTable
+                value={ledgerRecords}
+                className="compact-table border border-solid border-[lightgrey]"
+                stripedRows
+              >
                 <Column
                   header="#"
                   field="sn"
@@ -1348,13 +1406,20 @@ export default function POS() {
                     return rowIndex + 1;
                   }}
                 />
-                <Column header="Description" field="description" style={{ width: '200px' }} />
+                <Column header="Description" field="description" style={{ width: '40%' }} />
+                <Column header="Account" field="account" />
                 <Column
-                  header="Amount"
-                  field="amount"
-                  style={{ width: '80px', textAlign: 'right' }}
+                  header="Debit"
+                  field="debit"
                   body={(data) => {
-                    return data.amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    return Number(data.debit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                  }}
+                />
+                <Column
+                  header="Credit"
+                  field="credit"
+                  body={(data) => {
+                    return Number(data.credit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                   }}
                 />
               </DataTable>

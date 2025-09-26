@@ -113,7 +113,7 @@ model orders {
     shiftId       String          @db.VarChar(36)
     createdAt     DateTime        @default(now()) @db.DateTime(0)
     updatedAt     DateTime        @default(now()) @db.DateTime(0)
-    discounts     Json?           @db.Json
+    discounts     Json?
     items         order_details[] @relation("Order_OrderDetails")
 
     @@index([id, shiftId], map: "IDX_75531bd58d48f8818039c5b4ce")
@@ -130,6 +130,7 @@ model shifts {
     createdAt      DateTime      @default(now()) @db.DateTime(0)
     updatedAt      DateTime      @default(now()) @db.DateTime(0)
     statistics     statistics?   @relation(fields: [id], references: [shiftId], map: "fk_shift_statistics")
+    viewLedger     viewLedger?   @relation(fields: [id], references: [shiftId], map: "fk_shift_ledger")
     sales          shift_sales[] @relation("ShiftSales")
 
     @@index([id], map: "IDX_84d692e367e4d6cdf045828768")
@@ -145,6 +146,16 @@ model staff {
     updatedAt  DateTime @default(now()) @db.DateTime(0)
 
     @@index([id], map: "IDX_e4ee98bb552756c180aec1e854")
+}
+
+model ledger {
+    id          String   @id @db.VarChar(36)
+    date        DateTime @db.DateTime(0)
+    account     String   @db.VarChar(128)
+    description String   @db.Text
+    debit       Int?
+    credit      Int?
+    shiftId     String   @db.VarChar(36)
 }
 
 view shift_sales {
@@ -177,4 +188,13 @@ view statistics {
     shifts      shifts[]
 
     @@map("statistics")
+}
+
+view viewLedger {
+    shiftId String   @unique @db.VarChar(36)
+    credit  Int      @db.Int
+    debit   Int      @db.Int
+    shifts  shifts[]
+
+    @@map("viewLedger")
 }

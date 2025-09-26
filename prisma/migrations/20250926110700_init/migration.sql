@@ -13,6 +13,17 @@ CREATE TABLE `categories` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `accounts` (
+    `id` VARCHAR(36) NOT NULL,
+    `name` VARCHAR(128) NOT NULL,
+    `createdAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `updatedAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `IDX_24dbc6126a28ff948da33e97d4`(`id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `deleted_orders` (
     `id` VARCHAR(36) NOT NULL,
     `orderNumber` VARCHAR(128) NOT NULL,
@@ -139,6 +150,19 @@ CREATE TABLE `staff` (
     `updatedAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
     INDEX `IDX_e4ee98bb552756c180aec1e854`(`id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ledger` (
+    `id` VARCHAR(36) NOT NULL,
+    `date` DATETIME(0) NOT NULL,
+    `account` VARCHAR(128) NOT NULL,
+    `description` TEXT NOT NULL,
+    `debit` INTEGER NULL,
+    `credit` INTEGER NULL,
+    `shiftId` VARCHAR(36) NOT NULL,
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

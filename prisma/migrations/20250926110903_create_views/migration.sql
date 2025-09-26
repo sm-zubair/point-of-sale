@@ -52,3 +52,12 @@ CREATE
 				`point_of_sale`.`orders` 
 		GROUP BY
 	`point_of_sale`.`orders`.`shiftId`;
+
+CREATE OR REPLACE VIEW viewLedger AS SELECT
+		shiftId,
+		SUM( credit ) AS credit,
+		SUM( debit ) AS debit 
+	FROM
+		ledger 
+	GROUP BY
+		shiftId
