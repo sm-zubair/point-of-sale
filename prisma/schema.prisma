@@ -12,6 +12,7 @@ model categories {
     id        String   @id @db.VarChar(36)
     name      String   @db.VarChar(128)
     price     Int      @default(0)
+    factor    Int      @default(0)
     order     Int      @default(0)
     parents   Json?
     createdAt DateTime @default(now()) @db.DateTime(0)

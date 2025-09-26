@@ -54,6 +54,7 @@ export async function createCategory(params: Prisma.categoriesCreateArgs) {
   params.data = {
     ...params.data,
     price: parseInt(params.data.price.toString()),
+    factor: parseInt(params.data.factor.toString()),
     order: parseInt(params.data.order.toString()),
   };
   return await db.categories.create(params);
@@ -62,6 +63,7 @@ export async function updateCategory(params: Prisma.categoriesUpdateArgs) {
   params.data = {
     ...params.data,
     price: parseInt(params.data.price.toString()),
+    factor: parseInt(params.data.factor.toString()),
     order: parseInt(params.data.order.toString()),
   };
   return await db.categories.update(params);

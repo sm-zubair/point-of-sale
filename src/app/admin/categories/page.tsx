@@ -38,6 +38,7 @@ export default function CategoriesPage() {
     initialValues: {
       name: '',
       price: 0,
+      factor: 0,
       order: 0,
       parents: [],
     },
@@ -45,6 +46,7 @@ export default function CategoriesPage() {
       name: Yup.string().required(),
       order: Yup.number().required(),
       price: Yup.number().required(),
+      factor: Yup.number().required(),
       parents: Yup.array().optional().nullable(),
     }),
     onSubmit: async (values) => {
@@ -57,6 +59,7 @@ export default function CategoriesPage() {
             data: {
               name: values.name,
               price: values.price,
+              factor: values.factor,
               order: values.order,
               parents: values.parents ?? null,
             },
@@ -73,6 +76,7 @@ export default function CategoriesPage() {
               id: uuid(),
               name: values.name,
               price: values.price,
+              factor: values.factor,
               order: values.order,
               parents: values.parents ?? null,
             },
@@ -93,6 +97,7 @@ export default function CategoriesPage() {
       formik.setValues({
         name: selectedCategory.name,
         price: selectedCategory.price,
+        factor: selectedCategory.factor,
         order: selectedCategory.order,
         parents: selectedCategory.parents,
       });
@@ -136,6 +141,18 @@ export default function CategoriesPage() {
                   autoComplete="off"
                   invalid={formik.errors.price ? true : false}
                   {...formik.getFieldProps('price')}
+                />
+              </IconField>
+              <IconField iconPosition="left">
+                <InputIcon className="pi pi-asterisk" />
+                <InputText
+                  keyfilter="int"
+                  placeholder="Factor"
+                  name="factor"
+                  className="w-full"
+                  autoComplete="off"
+                  invalid={formik.errors.factor ? true : false}
+                  {...formik.getFieldProps('factor')}
                 />
               </IconField>
               <IconField iconPosition="left">

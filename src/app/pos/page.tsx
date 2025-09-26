@@ -197,11 +197,13 @@ export default function POS() {
     },
   });
 
-  const { category, subCategory, selectedCategoryId } = useMemo(() => {
+  const { category, subCategory, selectedCategoryId, selectedCategory } = useMemo(() => {
+    const selectedCategoryId = order.values.subCategoryId || order.values.categoryId;
     return {
       category: categories.find((c) => c.id === order.values.categoryId)?.name,
       subCategory: categories.find((c) => c.id === order.values.subCategoryId)?.name,
-      selectedCategoryId: order.values.subCategoryId || order.values.categoryId,
+      selectedCategory: categories.find((c) => c.id === selectedCategoryId)?.name,
+      selectedCategoryId,
     };
   }, [order.values.categoryId, order.values.subCategoryId]);
 
@@ -229,6 +231,11 @@ export default function POS() {
 
   const handleAddItem = async (item: Item) => {
     let originalPrice = categories.find((c) => c.id === selectedCategoryId && c.price > 0)?.price || item.price;
+    //category factored price
+    const factored = categories.find((c) => c.id === selectedCategoryId && c.factor > 0);
+    if (factored) {
+      originalPrice *= factored.factor;
+    }
     let discountedPrice = originalPrice;
     let discount = appliedDiscounts.find((d) => !(d.items as string[])?.length && !(d.categories as string[])?.length);
     if (discount) {
@@ -250,7 +257,7 @@ export default function POS() {
       ]);
     }
     const newItems = order.values.items.map((existingItem) => {
-      if (existingItem.itemId === item.id && [subCategory, category].includes(existingItem.category)) {
+      if (existingItem.itemId === item.id && selectedCategory === existingItem.category) {
         return {
           ...existingItem,
           quantity: existingItem.quantity + 1,
@@ -259,16 +266,16 @@ export default function POS() {
       }
       return existingItem;
     });
-    const itemExists = newItems.some((i) => i.itemId === item.id && [subCategory, category].includes(i.category));
+    const itemExists = newItems.some((i) => i.itemId === item.id && selectedCategory === i.category);
     if (!itemExists) {
       newItems.push({
         itemId: item.id,
         name: item.name,
-        price: discountedPrice,
+        price: Math.floor(discountedPrice),
         quantity: 1,
-        totalAmount: discountedPrice,
-        originalPrice: originalPrice,
-        category: subCategory || category,
+        totalAmount: Math.floor(discountedPrice),
+        originalPrice: Math.floor(originalPrice),
+        category: selectedCategory,
         categoryId: order.values.subCategoryId || order.values.categoryId,
       });
     }
@@ -364,7 +371,7 @@ export default function POS() {
       } else {
         _appliedDiscounts = _appliedDiscounts.filter((d) => d.id !== applyDiscount.id);
       }
-      // const confirmation = window.confirm('Are you sure you want change discounts ?');
+      const confirmation = window.confirm('Are you sure you want change discounts ?');
       if (true) {
         let grossTotal = 0;
         let discountedTotal = 0;
@@ -510,7 +517,9 @@ export default function POS() {
           orderBy: { name: 'asc' },
         });
         const categories = await getCategories({ orderBy: { order: 'asc' } });
-        const items = await getItems({ orderBy: { order: 'asc' } });
+        const items = await getItems({
+          orderBy: [{ order: 'asc' }, { name: 'asc' }],
+        });
         const orders = await getOrders({
           where: { shiftId: currentShift.id, status: { not: { in: [OrderStatus.Paid, OrderStatus.Due] } } },
           include: { items: { omit: { orderId: true } } },
@@ -991,19 +1000,33 @@ export default function POS() {
                     <Column field="category" header="Category" />
                     <Column field="quantity" header="Quantity" className="text-center font-bold" align="center" />
                     <Column field="price" header="Price" className="text-center font-bold" align="center" />
-                    <Column field="totalAmount" header="Total" className="text-center font-bold" align="center" />
                     <Column
+                      field="totalAmount"
+                      header="Total"
+                      className="text-center font-bold"
+                      align="center"
+                      body={(d) => Math.floor(d.totalAmount)}
+                    />
+                    {/* <Column
                       field="action"
                       header="Action"
                       align="center"
                       body={(data) => (
                         <>
                           <div className="flex items-center justify-center gap-2">
-                            <Button icon="pi pi-times" severity="danger" className="p-1" />
+                            <Button
+                              icon="pi pi-times"
+                              severity="danger"
+                              className="p-1"
+                              onClick={() => {
+
+                                console.log(data);
+                              }}
+                            />
                           </div>
                         </>
                       )}
-                    />
+                    /> */}
                   </DataTable>
                 </div>
               </div>

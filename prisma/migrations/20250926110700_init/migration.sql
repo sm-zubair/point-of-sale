@@ -3,6 +3,7 @@ CREATE TABLE `categories` (
     `id` VARCHAR(36) NOT NULL,
     `name` VARCHAR(128) NOT NULL,
     `price` INTEGER NOT NULL DEFAULT 0,
+    `factor` INTEGER NOT NULL DEFAULT 0,
     `order` INTEGER NOT NULL DEFAULT 0,
     `parents` JSON NULL,
     `createdAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
