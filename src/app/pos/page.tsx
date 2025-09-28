@@ -1201,6 +1201,7 @@ export default function POS() {
                   onChange={(e) => order.setFieldValue('received', Number(e.target.value))}
                   inputMode="numeric"
                   className="w-1/2 font-semibold"
+                  type="number"
                 />
               </div>
               {!order.values.discounts?.length && (
@@ -1214,6 +1215,7 @@ export default function POS() {
                     }}
                     inputMode="numeric"
                     className="w-1/2 font-semibold"
+                    type="number"
                   />
                 </div>
               )}
@@ -1290,6 +1292,7 @@ export default function POS() {
                 onChange={(e) => order.setFieldValue('received', Number(e.target.value))}
                 inputMode="numeric"
                 className="w-1/2 font-semibold"
+                type="number"
               />
             </div>
             <div className="flex items-center justify-between p-2">
