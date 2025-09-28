@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <PrimeReactProvider>
           <AuthProvider>
-            <main className="container m-auto">{children}</main>
+            <main className="m-auto">{children}</main>
           </AuthProvider>
           <Notification />
         </PrimeReactProvider>
