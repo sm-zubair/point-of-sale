@@ -1,10 +1,23 @@
-import { PrismaClient } from '@prisma/client';
+'use client';
+import { orders } from '@prisma/client';
+import { useParams } from 'next/navigation';
 import { Divider } from 'primereact/divider';
+import { useEffect, useState } from 'react';
+import { getOrder } from '../../../actions';
 
-export default async function Bill({ params }: { params: { orderNumber: string } }) {
-  const { orderNumber } = await params;
-  const db = new PrismaClient();
-  const order = await db.orders.findFirst({ where: { orderNumber }, include: { items: true } });
+export default function Bill() {
+  const { orderNumber } = useParams();
+  const [order, setOrder] = useState<orders | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const order = await getOrder({ where: { orderNumber: orderNumber as string }, include: { items: true } });
+      console.log(`🚀 --------------------------------🚀`);
+      console.log(`🚀 | page.tsx:12 | order:`, order);
+      console.log(`🚀 --------------------------------🚀`);
+      setOrder(order);
+    })();
+  }, []);
 
   return (
     <div className="bg-white text-xs text-black">
@@ -24,13 +37,33 @@ export default async function Bill({ params }: { params: { orderNumber: string }
             <div>Type: {order?.type}</div>
           </div>
         </div>
+        <table className="w-full border border-solid">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          {/* <tbody>
+            {order?..map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
+                <td>{item.quantity}</td>
+                <td>{item.originalPrice}</td>
+                <td>{item.totalAmount}</td>
+              </tr>
+            ))}
+          </tbody> */}
+        </table>
         <div className="grid grid-cols-5 gap-1">
           <div className="col-span-2">Item</div>
           <div className="text-center">Qty</div>
           <div className="text-center">Price</div>
           <div className="text-center">Total</div>
 
-          {order?.items.map((item) => (
+          {/* {order?.items.map((item) => (
             <>
               <div className="col-span-2">{item.name}</div>
               <div className="text-center">{item.quantity}</div>
@@ -41,7 +74,7 @@ export default async function Bill({ params }: { params: { orderNumber: string }
                 {item.totalAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
             </>
-          ))}
+          ))} */}
           <Divider className="col-span-5 my-2" />
           <div className="col-span-4">Gross Total: </div>
           <div className="text-center">{order?.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
