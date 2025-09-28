@@ -229,7 +229,7 @@ export default function ItemsPage() {
                 },
               }}
             >
-              <Column field="order" header="Order" style={{ width: '5rem' }}></Column>
+              <Column field="order" header="Order" style={{ width: '5rem' }} sortable sortField="order"></Column>
               <Column field="name" header="Name"></Column>
               <Column field="price" header="Price"></Column>
               <Column
