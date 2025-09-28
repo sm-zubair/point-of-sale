@@ -136,9 +136,16 @@ export async function removeDiscount(options: Prisma.discountsDeleteArgs) {
 export async function getOrders(params: Prisma.ordersFindManyArgs) {
   return db.orders.findMany(params);
 }
+
 export async function getOrder(params: Prisma.ordersFindFirstArgs) {
-  return db.orders.findFirst(params);
+  return await db.orders.findFirst({
+    ...params,
+    include: {
+      ...params.include,
+    },
+  });
 }
+
 export async function createOrder(params: Prisma.ordersCreateArgs) {
   return await db.orders.create(params);
 }

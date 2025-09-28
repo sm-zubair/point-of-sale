@@ -1,99 +1,108 @@
 'use client';
-import { orders } from '@prisma/client';
 import { useParams } from 'next/navigation';
-import { Divider } from 'primereact/divider';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getOrder } from '../../../actions';
 
 export default function Bill() {
   const { orderNumber } = useParams();
-  const [order, setOrder] = useState<orders | null>(null);
+  const [order, setOrder] = useState(null);
+  const [items, setItems] = useState(null);
 
   useEffect(() => {
     (async () => {
-      const order = await getOrder({ where: { orderNumber: orderNumber as string }, include: { items: true } });
-      console.log(`🚀 --------------------------------🚀`);
-      console.log(`🚀 | page.tsx:12 | order:`, order);
-      console.log(`🚀 --------------------------------🚀`);
-      setOrder(order);
+      const _order = await getOrder({
+        where: {
+          orderNumber: orderNumber as string,
+        },
+        include: { items: true },
+      });
+      const items = {};
+      for (const item of _order.items) {
+        items[item.category] = items[item.category] || [];
+        items[item.category].push(item);
+      }
+      setItems(items);
+      setOrder(_order);
     })();
   }, []);
 
   return (
-    <div className="bg-white text-xs text-black">
-      <div className="mx-auto w-[75mm] border border-solid p-2">
-        <div className="flex items-center justify-center">
-          <img src="./logo.png" alt="Logo" width={100} height={100} />
+    <div className="w-[570px] border-2 border-solid bg-white p-2 text-[14px] text-black">
+      <div className="flex items-center justify-center">
+        <img src="./logo.png" alt="Logo" width={100} height={100} />
+      </div>
+      <div className="text-center">Shop # 3 Freddys Food Court Malir Cantt</div>
+      <div className="my-2 border-2 border-solid p-2">
+        <div className="text-center text-base">BILL # {order?.orderNumber}</div>
+        <div className="flex items-center justify-between">
+          <div>Date: {order?.createdAt?.toLocaleDateString()}</div>
+          <div>Time: {order?.createdAt?.toLocaleTimeString()}</div>
         </div>
-        <div className="text-center">Shop # 3 Freddys Food Court Malir Cantt</div>
-        <div className="my-2 border border-solid p-1">
-          <div className="text-center text-base">BILL # {order?.orderNumber}</div>
-          <div className="flex items-center justify-between">
-            <div>Date: {order?.createdAt?.toLocaleDateString()}</div>
-            <div>Time: {order?.createdAt?.toLocaleTimeString()}</div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>Waiter: {order?.waiter}</div>
-            <div>Type: {order?.type}</div>
-          </div>
+        <div className="flex items-center justify-between">
+          <div>Waiter: {order?.waiter}</div>
+          <div>Type: {order?.type}</div>
         </div>
-        <table className="w-full border border-solid">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          {/* <tbody>
-            {order?..map((item) => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td>{item.quantity}</td>
-                <td>{item.originalPrice}</td>
-                <td>{item.totalAmount}</td>
+      </div>
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th className="w-[30%] text-left">Item</th>
+            <th className="w-[10%] pr-8 text-right">Qty</th>
+            <th className="w-[15%] pr-8 text-right">Price</th>
+            <th className="w-[15%] pr-8 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(items ?? {}).map(([cat, t]) => (
+            <React.Fragment key={cat}>
+              <tr>
+                <td colSpan={4} className="border-0 border-t border-solid text-left font-semibold">
+                  {cat}
+                </td>
               </tr>
-            ))}
-          </tbody> */}
-        </table>
-        <div className="grid grid-cols-5 gap-1">
-          <div className="col-span-2">Item</div>
-          <div className="text-center">Qty</div>
-          <div className="text-center">Price</div>
-          <div className="text-center">Total</div>
-
-          {/* {order?.items.map((item) => (
-            <>
-              <div className="col-span-2">{item.name}</div>
-              <div className="text-center">{item.quantity}</div>
-              <div className="text-center">
-                {item.originalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </div>
-              <div className="text-center">
-                {item.totalAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </div>
-            </>
-          ))} */}
-          <Divider className="col-span-5 my-2" />
-          <div className="col-span-4">Gross Total: </div>
-          <div className="text-center">{order?.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
-          <div className="col-span-4">Discount: </div>
-          <div className="text-center">
-            {order?.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-          </div>
-          <Divider className="col-span-5 my-2" />
-          <div className="col-span-4 font-bold">Net: </div>
-          <div className="text-center font-bold">
-            {order?.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-          </div>
-          <Divider className="col-span-5 my-2" />
+              {(t as any[]).map((item) => (
+                <tr key={item.itemId}>
+                  <td className="pl-4">{item.name}</td>
+                  <td className="pr-8 text-right">{item.quantity}</td>
+                  <td className="pr-8 text-right">{item.originalPrice}</td>
+                  <td className="pr-8 text-right">{item.totalAmount.toLocaleString({ maximumFractionDigits: 0 })}</td>
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+        </tbody>
+        <tfoot className="text-base">
+          <tr>
+            <td colSpan={4} className="border-0 border-b border-solid"></td>
+          </tr>
+          <tr>
+            <td colSpan={3} className="text-left">
+              Gross Total
+            </td>
+            <td className="pr-8 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
+          </tr>
+          <tr>
+            <td colSpan={3} className="text-left">
+              Discount
+            </td>
+            <td className="pr-8 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
+          </tr>
+          <tr>
+            <th colSpan={3} className="text-left">
+              Net
+            </th>
+            <th className="pr-8 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
+          </tr>
+        </tfoot>
+      </table>
+      <div className="my-2 border-2 border-solid p-2">
+        <div className="flex items-center justify-evenly">
+          <div>Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER}</div>
+          <div>Title: {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}</div>
         </div>
-
-        <div className="my-2 border border-solid p-1">
-          <div className="text-center text-base">Online Payment : {process.env.ONLINE_PAYMENT_NUMBER}</div>
-          <div className="text-center">({process.env.ONLINE_PAYMENT_NAME})</div>
-          <div className="text-center">JazzCash, SadaPay, Easypaisa</div>
+        <div className="mt-2 text-center">JazzCash, SadaPay, Easypaisa</div>
+        <div className="mt-2 text-center text-xs">
+          *All collected remaining change will be donated to various charities
         </div>
       </div>
     </div>
