@@ -30,16 +30,6 @@ body {
   background-color: aliceblue;
 }
 
-@media print {
-  table thead {
-    display: table-row-group;
-  }
-  body {
-    margin: 0;
-    background-color: transparent;
-  }
-}
-
 .compact-table .p-datatable-tbody > tr > td,
 .compact-table .p-datatable-thead > tr > th {
   padding: 5px 6px;

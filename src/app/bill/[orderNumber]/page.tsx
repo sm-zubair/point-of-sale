@@ -27,7 +27,7 @@ export default function Bill() {
   }, []);
 
   return (
-    <div className="border-2 border-solid bg-white p-2 text-[10px] text-black">
+    <div className="mr-2 -ml-2 border-2 border-solid bg-white p-2 text-[10px] text-black">
       <div className="flex items-center justify-center">
         <img src="./logo.png" alt="Logo" width={100} height={100} />
       </div>
@@ -35,8 +35,8 @@ export default function Bill() {
       <div className="my-2 border-2 border-solid p-2">
         <div className="text-center text-base">BILL # {order?.orderNumber}</div>
         <div className="flex items-center justify-between">
-          <div>Date: {order?.createdAt?.toLocaleDateString()}</div>
-          <div>Time: {order?.createdAt?.toLocaleTimeString()}</div>
+          <div>Date: {order?.createdAt?.toLocaleDateString('en-UK')}</div>
+          <div>Time: {order?.createdAt?.toLocaleTimeString('en-US')}</div>
         </div>
         <div className="flex items-center justify-between">
           <div>Waiter: {order?.waiter}</div>
@@ -46,10 +46,10 @@ export default function Bill() {
       <table className="w-full">
         <thead>
           <tr>
-            <th className="w-[30%] text-left">Item</th>
-            <th className="w-[10%] pr-8 text-right">Qty</th>
-            <th className="w-[15%] pr-8 text-right">Price</th>
-            <th className="w-[15%] pr-8 text-right">Total</th>
+            <th className="w-[40%] text-left">Item</th>
+            <th className="w-[10%] pr-4 text-right">Qty</th>
+            <th className="w-[10%] pr-4 text-right">Price</th>
+            <th className="w-[10%] pr-4 text-right">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -63,9 +63,9 @@ export default function Bill() {
               {(t as any[]).map((item) => (
                 <tr key={item.itemId}>
                   <td className="pl-4">{item.name}</td>
-                  <td className="pr-8 text-right">{item.quantity}</td>
-                  <td className="pr-8 text-right">{item.originalPrice}</td>
-                  <td className="pr-8 text-right">{item.totalAmount.toLocaleString({ maximumFractionDigits: 0 })}</td>
+                  <td className="pr-4 text-right">{item.quantity}</td>
+                  <td className="pr-4 text-right">{item.originalPrice}</td>
+                  <td className="pr-4 text-right">{item.totalAmount.toLocaleString({ maximumFractionDigits: 0 })}</td>
                 </tr>
               ))}
             </React.Fragment>
@@ -79,19 +79,19 @@ export default function Bill() {
             <td colSpan={3} className="text-left">
               Gross Total
             </td>
-            <td className="pr-8 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-4 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
           </tr>
           <tr>
             <td colSpan={3} className="text-left">
               Discount
             </td>
-            <td className="pr-8 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-4 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
           </tr>
           <tr>
             <th colSpan={3} className="text-left">
               Net
             </th>
-            <th className="pr-8 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
+            <th className="pr-4 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
           </tr>
         </tfoot>
       </table>
