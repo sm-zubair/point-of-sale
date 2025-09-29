@@ -8,7 +8,7 @@ import { Fieldset } from 'primereact/fieldset';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useEffect, useMemo, useState } from 'react';
-import { createShift, getNotes, getShifts, getStaff } from '../actions';
+import { createShift, getNotes, getShifts, getStaff, updateShift } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 
@@ -411,24 +411,24 @@ export default function Home() {
                 onClick={async () => {
                   try {
                     if (currentShift) {
-                      // //close shift
-                      // const shift = await prisma.shifts.update({
-                      //   where: { id: currentShift.id },
-                      //   data: {
-                      //     closingStaff: selectedStaff.name,
-                      //     closeAt: new Date(),
-                      //     closingBalance: balance,
-                      //   },
-                      // });
-                      // notify('success', 'Shift closed', 'Success');
-                      // const _shifts = shifts.filter((x) => x.id !== currentShift.id);
-                      // _shifts.unshift({
-                      //   ...currentShift,
-                      //   closeAt: new Date(),
-                      //   closingBalance: balance,
-                      // });
-                      // setShifts(_shifts);
-                      // setSelectedShift(null);
+                      //close shift
+                      const shift = await updateShift({
+                        where: { id: currentShift.id },
+                        data: {
+                          closingStaff: selectedStaff.name,
+                          closeAt: new Date(),
+                          closingBalance: balance,
+                        },
+                      });
+                      notify('success', 'Shift closed', 'Success');
+                      const _shifts = shifts.filter((x) => x.id !== currentShift.id);
+                      _shifts.unshift({
+                        ...currentShift,
+                        closeAt: new Date(),
+                        closingBalance: balance,
+                      });
+                      setShifts(_shifts);
+                      setSelectedShift(null);
                     } else {
                       //open shift
                       const shift = await createShift({

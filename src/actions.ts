@@ -23,6 +23,14 @@ export async function createShift(params: Prisma.shiftsCreateArgs) {
   };
   return await db.shifts.create(params);
 }
+export async function updateShift(params: Prisma.shiftsUpdateArgs) {
+  params.data = {
+    ...params.data,
+    openingBalance: params.data?.openingBalance ? parseInt(params.data?.openingBalance?.toString()) : undefined,
+    closingBalance: params.data?.closingBalance ? parseInt(params.data?.closingBalance?.toString()) : undefined,
+  };
+  return await db.shifts.update(params);
+}
 
 //Staff
 export async function getStaff(options: Prisma.staffFindManyArgs) {
@@ -136,7 +144,6 @@ export async function removeDiscount(options: Prisma.discountsDeleteArgs) {
 export async function getOrders(params: Prisma.ordersFindManyArgs) {
   return db.orders.findMany(params);
 }
-
 export async function getOrder(params: Prisma.ordersFindFirstArgs) {
   return await db.orders.findFirst({
     ...params,
@@ -145,7 +152,6 @@ export async function getOrder(params: Prisma.ordersFindFirstArgs) {
     },
   });
 }
-
 export async function createOrder(params: Prisma.ordersCreateArgs) {
   return await db.orders.create(params);
 }

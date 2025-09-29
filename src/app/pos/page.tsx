@@ -1,6 +1,5 @@
 'use client';
 import type {
-  accounts as Account,
   categories as Category,
   discounts as Discount,
   items as Item,
@@ -57,7 +56,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'online' | null>(null);
   const [currentShift, setCurrentShift] = useState<Shift>(null);
   const [customers, setCustomers] = useState<string[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState([]);
   const [selectCustomer, setSelectCustomer] = useState<boolean>(false);
   const [cashOut, setCashOut] = useState<boolean>(false);
   const [ledgerRecords, setLedgerRecords] = useState<Ledger[]>([]);
@@ -511,9 +510,8 @@ export default function POS() {
       });
       if (currentShift) {
         setCurrentShift(currentShift);
-        const waiters = await getStaff({
+        const staff = await getStaff({
           select: { id: true, name: true, commission: true },
-          where: { isServing: true },
           orderBy: { name: 'asc' },
         });
         const categories = await getCategories({ orderBy: { order: 'asc' } });
@@ -553,14 +551,21 @@ export default function POS() {
           },
         });
 
-        setWaiters(waiters);
+        const _accounts = [...accounts, ...staff]
+          .map((a) => ({
+            id: a.id,
+            name: a.name,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        setWaiters(staff.filter((s) => s.isServing));
         setCategories(categories);
         setItems(items);
         setOrders(orders);
         setDiscounts(discounts);
         setAppliedDiscounts(discounts.filter((d) => d.autoApply));
         setCustomers(customers.map((c) => c.customer));
-        setAccounts(accounts);
+        setAccounts(_accounts);
         setLedgerRecords(ledgerRecords);
       } else {
         setCurrentShift(null);
