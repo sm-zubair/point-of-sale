@@ -471,8 +471,6 @@ export default function POS() {
       '_blank',
       'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
     );
-    win?.print();
-    win.close();
   };
 
   //visual feedback

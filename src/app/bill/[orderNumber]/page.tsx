@@ -23,6 +23,7 @@ export default function Bill() {
       }
       setItems(items);
       setOrder(_order);
+      window.print();
     })();
   }, []);
 
@@ -41,6 +42,10 @@ export default function Bill() {
         <div className="flex items-center justify-between">
           <div>Waiter: {order?.waiter}</div>
           <div>Type: {order?.type}</div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>Payment: {order?.payment}</div>
+          <div>Status: {order?.status}</div>
         </div>
       </div>
       <table className="w-full">
@@ -96,10 +101,9 @@ export default function Bill() {
         </tfoot>
       </table>
       <div className="my-2 border-2 border-solid p-2">
-        <div>
+        <div className="text-center">
           Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER} {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}
         </div>
-        <div></div>
         <div className="mt-2 text-center">JazzCash, SadaPay, Easypaisa</div>
         <div className="mt-2 text-center text-[8px]">
           *All collected remaining change will be donated to various charities
