@@ -346,6 +346,7 @@ export default function POS() {
       setOrders(_orders);
       notify('success', 'Order paid', 'Success', true);
       setPaymentMethod(null);
+      handlePrint();
       handleOrderReset();
     } else {
       notify('error', 'Error', 'Failed to pay order');
@@ -462,6 +463,16 @@ export default function POS() {
       });
     }
     return entries;
+  };
+
+  const handlePrint = () => {
+    const win = window.open(
+      `/bill/${order.values.orderNumber}`,
+      '_blank',
+      'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
+    );
+    win?.print();
+    win.close();
   };
 
   //visual feedback
@@ -734,13 +745,7 @@ export default function POS() {
                 disabled={!order.values.id}
                 className="min-w-28 p-4"
                 onClick={() => {
-                  const win = window.open(
-                    `/bill/${order.values.orderNumber}`,
-                    '_blank',
-                    'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
-                  );
-                  win?.print();
-                  win.close();
+                  handlePrint();
                 }}
               />
               <Divider className="my-2" />
