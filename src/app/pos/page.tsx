@@ -282,12 +282,12 @@ export default function POS() {
   };
 
   const handleDeleteOrder = async () => {
-    const deleted = await removeOrder({
-      where: { id: order.values.id },
+    const deleted = await removeOrderDetails({
+      where: { orderId: order.values.id },
     });
     if (deleted) {
-      await removeOrderDetails({
-        where: { orderId: order.values.id },
+      await removeOrder({
+        where: { id: order.values.id },
       });
       await createOrderDelete({
         data: {
