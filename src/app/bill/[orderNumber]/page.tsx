@@ -47,9 +47,9 @@ export default function Bill() {
         <thead>
           <tr>
             <th className="w-[40%] text-left">Item</th>
-            <th className="w-[10%] pr-4 text-right">Qty</th>
-            <th className="w-[10%] pr-4 text-right">Price</th>
-            <th className="w-[10%] pr-4 text-right">Total</th>
+            <th className="w-[10%] pr-3 text-right">Qty</th>
+            <th className="w-[10%] pr-3 text-right">Price</th>
+            <th className="w-[10%] pr-3 text-right">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -62,10 +62,10 @@ export default function Bill() {
               </tr>
               {(t as any[]).map((item) => (
                 <tr key={item.itemId}>
-                  <td className="pl-4">{item.name}</td>
-                  <td className="pr-4 text-right">{item.quantity}</td>
-                  <td className="pr-4 text-right">{item.originalPrice}</td>
-                  <td className="pr-4 text-right">{item.totalAmount.toLocaleString({ maximumFractionDigits: 0 })}</td>
+                  <td className="pl-2">{item.name}</td>
+                  <td className="pr-3 text-right">{item.quantity}</td>
+                  <td className="pr-3 text-right">{item.originalPrice}</td>
+                  <td className="pr-3 text-right">{item.totalAmount.toLocaleString({ maximumFractionDigits: 0 })}</td>
                 </tr>
               ))}
             </React.Fragment>
@@ -79,19 +79,19 @@ export default function Bill() {
             <td colSpan={3} className="text-left">
               Gross Total
             </td>
-            <td className="pr-4 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-3 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
           </tr>
           <tr>
             <td colSpan={3} className="text-left">
               Discount
             </td>
-            <td className="pr-4 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-3 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
           </tr>
           <tr>
             <th colSpan={3} className="text-left">
               Net
             </th>
-            <th className="pr-4 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
+            <th className="pr-3 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
           </tr>
         </tfoot>
       </table>
