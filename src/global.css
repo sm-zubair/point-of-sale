@@ -30,6 +30,11 @@ body {
   background-color: aliceblue;
   zoom: 0.8;
 }
+@media print {
+  body {
+    zoom: 1;
+  }
+}
 
 .compact-table .p-datatable-tbody > tr > td,
 .compact-table .p-datatable-thead > tr > th {
