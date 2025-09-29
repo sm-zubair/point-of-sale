@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-    provider = "mysql"
-    url      = env("DATABASE_URL")
+    provider     = "mysql"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
 }
 
 model categories {
@@ -92,7 +93,7 @@ model order_details {
     price         Int    @default(0)
     originalPrice Int    @default(0)
     totalAmount   Int    @default(0)
-    order         orders @relation("Order_OrderDetails", fields: [orderId], references: [id], onDelete: Cascade, map: "fk_order_details_order")
+    order         orders @relation("Order_OrderDetails", fields: [orderId], references: [id])
 
     @@id([orderId, itemId, categoryId])
     @@index([orderId, itemId, categoryId], map: "IDX_3d2bea6797aab2d1248a4827e7")
