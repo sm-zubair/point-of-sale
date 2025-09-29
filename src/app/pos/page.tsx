@@ -734,14 +734,13 @@ export default function POS() {
                 disabled={!order.values.id}
                 className="min-w-28 p-4"
                 onClick={() => {
-                  router.push(`/bill/${order.values.orderNumber}`);
-                  // const win = window.open(
-                  //   `/bill/${order.values.orderNumber}`,
-                  //   '_blank',
-                  //   'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
-                  // );
-                  // win?.print();
-                  // win.close();
+                  const win = window.open(
+                    `/bill/${order.values.orderNumber}`,
+                    '_blank',
+                    'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
+                  );
+                  win?.print();
+                  win.close();
                 }}
               />
               <Divider className="my-2" />
