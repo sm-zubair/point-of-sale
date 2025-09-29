@@ -511,7 +511,7 @@ export default function POS() {
       if (currentShift) {
         setCurrentShift(currentShift);
         const staff = await getStaff({
-          select: { id: true, name: true, commission: true },
+          select: { id: true, name: true, commission: true, isServing: true },
           orderBy: { name: 'asc' },
         });
         const categories = await getCategories({ orderBy: { order: 'asc' } });
@@ -557,7 +557,6 @@ export default function POS() {
             name: a.name,
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
-
         setWaiters(staff.filter((s) => s.isServing));
         setCategories(categories);
         setItems(items);
