@@ -31,8 +31,8 @@ body {
 }
 
 @media print {
-  @page {
-    size: 75mm auto; /* Change to 58mm if using 58mm paper */
+  table thead {
+    display: table-row-group;
   }
   body {
     margin: 0;

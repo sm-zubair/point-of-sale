@@ -27,7 +27,7 @@ export default function Bill() {
   }, []);
 
   return (
-    <div className="w-[570px] border-2 border-solid bg-white p-2 text-[14px] text-black">
+    <div className="border-2 border-solid bg-white p-2 text-[10px] text-black">
       <div className="flex items-center justify-center">
         <img src="./logo.png" alt="Logo" width={100} height={100} />
       </div>
@@ -71,7 +71,7 @@ export default function Bill() {
             </React.Fragment>
           ))}
         </tbody>
-        <tfoot className="text-base">
+        <tfoot className="text-xs">
           <tr>
             <td colSpan={4} className="border-0 border-b border-solid"></td>
           </tr>
@@ -96,12 +96,12 @@ export default function Bill() {
         </tfoot>
       </table>
       <div className="my-2 border-2 border-solid p-2">
-        <div className="flex items-center justify-evenly">
-          <div>Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER}</div>
-          <div>Title: {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}</div>
+        <div>
+          Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER} {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}
         </div>
+        <div></div>
         <div className="mt-2 text-center">JazzCash, SadaPay, Easypaisa</div>
-        <div className="mt-2 text-center text-xs">
+        <div className="mt-2 text-center text-[8px]">
           *All collected remaining change will be donated to various charities
         </div>
       </div>
