@@ -1,31 +1,21 @@
-'use client';
-import { useParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { getOrder } from '../../../actions';
 
-export default function Bill() {
-  const { orderNumber } = useParams();
-  const [order, setOrder] = useState(null);
-  const [items, setItems] = useState(null);
+export default async function Bill({ params }: { params: Promise<{ orderNumber: string }> }) {
+  const { orderNumber } = await params;
 
-  useEffect(() => {
-    (async () => {
-      const _order = await getOrder({
-        where: {
-          orderNumber: orderNumber as string,
-        },
-        include: { items: true },
-      });
-      const items = {};
-      for (const item of _order.items) {
-        items[item.category] = items[item.category] || [];
-        items[item.category].push(item);
-      }
-      setItems(items);
-      setOrder(_order);
-      window.print();
-    })();
-  }, []);
+  const items = {};
+  const order = await getOrder({
+    where: {
+      orderNumber: orderNumber,
+    },
+    include: { items: true },
+  });
+
+  for (const item of order?.items ?? []) {
+    items[item.category] = items[item.category] || [];
+    items[item.category].push(item);
+  }
 
   return (
     <div className="mr-2 -ml-2 border-2 border-solid bg-white p-2 text-[10px] text-black">
@@ -84,19 +74,23 @@ export default function Bill() {
             <td colSpan={3} className="text-left">
               Gross Total
             </td>
-            <td className="pr-3 text-right">{order?.total.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-3 text-right">{order?.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
           </tr>
           <tr>
             <td colSpan={3} className="text-left">
               Discount
             </td>
-            <td className="pr-3 text-right">{order?.discountValue.toLocaleString({ maximumFractionDigits: 0 })}</td>
+            <td className="pr-3 text-right">
+              {order?.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </td>
           </tr>
           <tr>
             <th colSpan={3} className="text-left">
               Net
             </th>
-            <th className="pr-3 text-right font-bold">{order?.net.toLocaleString({ maximumFractionDigits: 0 })}</th>
+            <th className="pr-3 text-right font-bold">
+              {order?.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            </th>
           </tr>
         </tfoot>
       </table>
@@ -109,6 +103,7 @@ export default function Bill() {
           *All collected remaining change will be donated to various charities
         </div>
       </div>
+      <script>console.log('print....'); window.print();</script>
     </div>
   );
 }
