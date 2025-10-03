@@ -645,6 +645,7 @@ export default function POS() {
                 label="New"
                 icon="pi pi-plus"
                 severity="info"
+                disabled={order.values.id}
                 onClick={() => {
                   order.setFieldValue('isNew', true);
                   if (order.values.type === OrderType.Credit) setSelectCustomer(true);
