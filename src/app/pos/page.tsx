@@ -38,6 +38,7 @@ import {
 } from '../../actions';
 import CashIn from '../../components/cash-in';
 import CashOut from '../../components/cash-out';
+import SaleReturn from '../../components/sale-return';
 import OrderStatus from '../../constants/order-status';
 import OrderType from '../../constants/order-type';
 import notify from '../../helpers/notify';
@@ -59,6 +60,7 @@ export default function POS() {
   const [selectCustomer, setSelectCustomer] = useState<boolean>(false);
   const [cashOut, setCashOut] = useState<boolean>(false);
   const [cashIn, setCashIn] = useState<boolean>(false);
+  const [saleReturn, setSaleReturn] = useState<boolean>(false);
   const [ledgerRecords, setLedgerRecords] = useState<Ledger[]>([]);
   const tableRef = useRef(null);
 
@@ -583,7 +585,13 @@ export default function POS() {
             onClick={() => setCashIn(true)}
           />
           <Button label="Inventory" icon="pi pi-box" severity="info" className="min-w-24 p-5" />
-          <Button label="Sale Return" icon="pi pi-refresh" severity="danger" className="min-w-24 p-5" />
+          <Button
+            label="Sale Return"
+            icon="pi pi-refresh"
+            severity="danger"
+            className="min-w-24 p-5"
+            onClick={() => setSaleReturn(true)}
+          />
         </div>
       </div>
       {!order.values.isNew && !order.values.isEdit ? (
@@ -1324,6 +1332,7 @@ export default function POS() {
         setVisible={setCashIn}
         setLedgerRecords={setLedgerRecords}
       />
+      {saleReturn && <SaleReturn visible={saleReturn} shift={currentShift} setVisible={setSaleReturn} />}
     </>
   );
 }
