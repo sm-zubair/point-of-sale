@@ -291,9 +291,13 @@ export default function POS() {
         break;
       }
     }
+    let discountValue;
+    if (!order.values.discounts?.length) {
+      discountValue = order.values.discountValue;
+    }
     const updated = await updateOrder({
       where: { id: order.values.id },
-      data: { status, payment: method, tip },
+      data: { status, payment: method, tip, discountValue, net: order.values.net },
     });
     if (updated) {
       const _orders = orders.filter((o) => o.id !== order.values.id);
