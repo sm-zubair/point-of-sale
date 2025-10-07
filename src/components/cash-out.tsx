@@ -7,9 +7,9 @@ import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger } from '../actions';
+import { createLedger, getLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 
@@ -21,6 +21,22 @@ type Props = {
 };
 
 export default function CashOut({ visible, accounts, shift, setVisible }: Props) {
+  const [ledger, setLedger] = useState([]);
+
+  useEffect(() => {
+    getLedger({
+      where: {
+        shiftId: shift.id,
+      },
+    })
+      .then((data) => {
+        setLedger(data);
+      })
+      .catch((e) => {
+        notify('error', 'Error', e.message);
+      });
+  }, []);
+
   const cashOutForm = useFormik({
     initialValues: {
       account: null,
@@ -44,11 +60,11 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
         }
         const data: ledger[] = entries.map((x) => ({
           id: uuid(),
-          account: values.account,
+          from: 'Cash',
+          to: values.account,
           date: shift.openAt,
           description: x.description,
-          credit: x.credit,
-          debit: 0,
+          amount: x.credit,
           shiftId: shift.id,
         }));
         if (!data.length) {
@@ -57,6 +73,7 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
         }
         const ledger = await createLedger({ data });
         if (ledger.count > 0) {
+          setLedger((s) => [...s, ...data]);
           cashOutForm.resetForm();
           notify('success', 'Cash out added', 'Success');
         }
@@ -147,7 +164,7 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
             />
           </div>
           <div className="col-span-3">
-            <DataTable value={[]} className="compact-table border border-solid border-[lightgrey]" stripedRows>
+            <DataTable value={ledger} className="compact-table border border-solid border-[lightgrey]" stripedRows>
               <Column
                 header="#"
                 field="sn"
@@ -157,20 +174,15 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
                   return rowIndex + 1;
                 }}
               />
+              <Column header="Account" field="to" style={{ width: '30%' }} />
               <Column header="Description" field="description" style={{ width: '40%' }} />
-              <Column header="Account" field="account" />
               <Column
-                header="Debit"
-                field="debit"
+                header="Amount"
+                field="amount"
+                align="right"
+                style={{ width: '20%', textAlign: 'right' }}
                 body={(data) => {
-                  return Number(data.debit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
-                }}
-              />
-              <Column
-                header="Credit"
-                field="credit"
-                body={(data) => {
-                  return Number(data.credit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                  return Number(data.amount)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                 }}
               />
             </DataTable>

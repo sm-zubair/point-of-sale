@@ -474,7 +474,7 @@ export default function Home() {
           draggable={false}
           resizable={false}
         >
-          <div className="grid grid-cols-1 gap-4">
+          <div className="relative grid grid-cols-1 gap-4">
             <div className="p-inputgroup">
               <span className="p-inputgroup-addon">
                 <i className="pi pi-user"></i>
@@ -485,6 +485,7 @@ export default function Home() {
                 optionLabel="name"
                 value={selectedStaff}
                 onChange={(e) => setSelectedStaff(e.value)}
+                className="w-full"
               />
             </div>
             <div className="p-inputgroup">

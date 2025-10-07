@@ -28,7 +28,6 @@
 
 body {
   background-color: aliceblue;
-  zoom: 0.8;
 }
 @media print {
   body {

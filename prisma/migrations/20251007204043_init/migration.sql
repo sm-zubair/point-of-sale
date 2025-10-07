@@ -158,14 +158,11 @@ CREATE TABLE `staff` (
 CREATE TABLE `ledger` (
     `id` VARCHAR(36) NOT NULL,
     `date` DATETIME(0) NOT NULL,
-    `account` VARCHAR(128) NOT NULL,
+    `from` VARCHAR(128) NOT NULL DEFAULT 'Cash',
+    `to` VARCHAR(128) NOT NULL,
     `description` TEXT NOT NULL,
-    `debit` INTEGER NULL,
-    `credit` INTEGER NULL,
+    `amount` INTEGER NOT NULL DEFAULT 0,
     `shiftId` VARCHAR(36) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- AddForeignKey
-ALTER TABLE `order_details` ADD CONSTRAINT `fk_order_details_order` FOREIGN KEY (`orderId`) REFERENCES `orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

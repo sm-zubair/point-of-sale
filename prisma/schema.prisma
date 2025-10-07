@@ -153,15 +153,15 @@ model staff {
 model ledger {
     id          String   @id @db.VarChar(36)
     date        DateTime @db.DateTime(0)
-    account     String   @db.VarChar(128)
+    from        String   @default("Cash") @db.VarChar(128)
+    to          String   @db.VarChar(128)
     description String   @db.Text
-    debit       Int?
-    credit      Int?
+    amount      Int      @default(0)
     shiftId     String   @db.VarChar(36)
 }
 
 view shift_sales {
-    shiftId          String  @db.VarChar(36)
+    shiftId          String  @unique @db.VarChar(36)
     waiter           String? @db.VarChar(128)
     waiterNetSales   Int?    @db.Int
     waiterCommission Int?    @db.Int
