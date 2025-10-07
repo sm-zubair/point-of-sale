@@ -1,4 +1,4 @@
-import { accounts, ledger, shifts } from '@prisma/client';
+import { ledger, shifts } from '@prisma/client';
 import { useFormik } from 'formik';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
@@ -14,14 +14,12 @@ import uuid from '../helpers/uuid';
 
 type Props = {
   visible: boolean;
-  accounts: accounts[];
-  ledgerRecords: ledger[];
+  accounts: string[];
   shift: shifts;
   setVisible: Dispatch<SetStateAction<boolean>>;
-  setLedgerRecords: Dispatch<SetStateAction<ledger[]>>;
 };
 
-export default function CashIn({ visible, accounts, ledgerRecords, shift, setVisible, setLedgerRecords }: Props) {
+export default function CashIn({ visible, accounts, shift, setVisible }: Props) {
   const cashInForm = useFormik({
     initialValues: {
       account: null,
@@ -54,7 +52,6 @@ export default function CashIn({ visible, accounts, ledgerRecords, shift, setVis
         }
         const ledger = await createLedger({ data });
         if (ledger.count > 0) {
-          setLedgerRecords([...ledgerRecords, ...data]);
           cashInForm.resetForm();
           notify('success', 'Cash in added', 'Success');
         }
@@ -108,8 +105,6 @@ export default function CashIn({ visible, accounts, ledgerRecords, shift, setVis
             <Dropdown
               options={accounts}
               placeholder="Account"
-              optionLabel="name"
-              optionValue="name"
               invalid={cashInForm.errors.account ? true : false}
               filter
               {...cashInForm.getFieldProps('account')}
@@ -131,11 +126,7 @@ export default function CashIn({ visible, accounts, ledgerRecords, shift, setVis
             />
           </div>
           <div className="col-span-3">
-            <DataTable
-              value={ledgerRecords.filter((x) => x.debit > 0)}
-              className="compact-table border border-solid border-[lightgrey]"
-              stripedRows
-            >
+            <DataTable value={[]} className="compact-table border border-solid border-[lightgrey]" stripedRows>
               <Column
                 header="#"
                 field="sn"

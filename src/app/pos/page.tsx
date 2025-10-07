@@ -1,18 +1,8 @@
 'use client';
-import type {
-  categories as Category,
-  discounts as Discount,
-  items as Item,
-  ledger as Ledger,
-  orders as Order,
-  shifts as Shift,
-  staff as Staff,
-} from '@prisma/client';
-import { useFormik } from 'formik';
+import { deleted_orders, discounts, type items, type orders as Order, type orders } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
-import { Chip } from 'primereact/chip';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
@@ -27,144 +17,63 @@ import {
   getCategories,
   getDiscounts,
   getItems,
-  getLedger,
   getOrders,
   getShift,
   getStaff,
-  getUniqueCustomers,
   removeOrder,
   removeOrderDetails,
   updateOrder,
 } from '../../actions';
 import CashIn from '../../components/cash-in';
 import CashOut from '../../components/cash-out';
+import OrderItems from '../../components/order-items';
 import SaleReturn from '../../components/sale-return';
 import OrderStatus from '../../constants/order-status';
 import OrderType from '../../constants/order-type';
 import notify from '../../helpers/notify';
 import uuid from '../../helpers/uuid';
+import store from '../../store';
 
 export default function POS() {
   const router = useRouter();
-  const [waiters, setWaiters] = useState<Staff[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [appliedDiscounts, setAppliedDiscounts] = useState<Discount[]>([]);
+  const shift = store((s) => s.shift);
+  const staff = store((s) => s.staff);
+  const categories = store((s) => s.categories);
+  const items = store((s) => s.items);
+  const orders = store((s) => s.orders);
+  const discounts = store((s) => s.discounts);
+  const autoApplyDiscounts = store((s) => s.autoApplyDiscounts);
+  const accounts = store((s) => s.accounts);
+  const order = store((s) => s.order);
+
+  const [orderType, setOrderType] = useState<OrderType>(OrderType.DineIn);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
+  const [deletedOrder, setDeletedOrder] = useState<deleted_orders>(null);
+  const [received, setReceived] = useState<number | null>(null);
+
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'online' | null>(null);
-  const [currentShift, setCurrentShift] = useState<Shift>(null);
-  const [customers, setCustomers] = useState<string[]>([]);
-  const [accounts, setAccounts] = useState([]);
   const [selectCustomer, setSelectCustomer] = useState<boolean>(false);
   const [cashOut, setCashOut] = useState<boolean>(false);
   const [cashIn, setCashIn] = useState<boolean>(false);
   const [saleReturn, setSaleReturn] = useState<boolean>(false);
-  const [ledgerRecords, setLedgerRecords] = useState<Ledger[]>([]);
+  const [isNew, setIsNew] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+
   const tableRef = useRef(null);
 
-  const order = useFormik({
-    initialValues: {
-      id: null,
-      orderNumber: null,
-      isNew: false,
-      isEdit: false,
-      type: OrderType.DineIn,
-      total: 0,
-      discountValue: 0,
-      net: 0,
-      commission: 0,
-      status: OrderStatus.Pending,
-      itemLess: [],
-      items: [],
-      discounts: [],
-      waiter: null,
-      categoryId: null,
-      subCategoryId: null,
-      payment: null,
-      createdAt: null,
-      updatedAt: null,
-      tip: 0,
-      shiftId: null,
-      deleteReason: null,
-      received: 0,
-      customer: null,
-    },
-    onSubmit: async (values) => {
-      try {
-        const total = values.items.reduce((t, item) => t + item.originalPrice * item.quantity, 0);
-        const net = values.items.reduce((t, item) => t + item.totalAmount, 0);
-        const discount = total - net;
-        const items = values.items;
-        if (values.isNew) {
-          const now = new Date();
-          const item = await createOrder({
-            data: {
-              id: uuid(),
-              orderNumber: `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`,
-              type: values.type,
-              status: values.status,
-              waiter: values.waiter,
-              payment: values.payment,
-              commission: values.commission,
-              total,
-              discountValue: Math.ceil(discount),
-              net,
-              shiftId: currentShift.id,
-              discounts: values.discounts,
-              items: {
-                create: items,
-              },
-              customer: values.customer,
-            },
-            include: { items: { omit: { orderId: true } } },
-          });
-          notify('success', 'Order added', 'Success');
-          setOrders([...orders, item]);
-        } else {
-          const item = await updateOrder({
-            where: { id: values.id },
-            data: {
-              total,
-              discountValue: discount,
-              net,
-              discounts: values.discounts,
-              items: { deleteMany: {}, create: items },
-              customer: values.customer,
-              type: values.type,
-            },
-            include: { items: { omit: { orderId: true } } },
-          });
-          if (item) {
-            const newOrders = orders.filter((order) => order.id !== values.id);
-            setOrders([...newOrders, item]);
-            notify('success', 'Order updated', 'Success');
-          } else {
-            notify('error', 'Error', 'Failed to update order');
-          }
-        }
-        handleOrderReset();
-        order.setFieldValue('type', values.type);
-      } catch (e: any) {
-        notify('error', 'Error', e.message);
-      }
-    },
-  });
-
-  const { category, subCategory, selectedCategoryId, selectedCategory } = useMemo(() => {
-    const selectedCategoryId = order.values.subCategoryId || order.values.categoryId;
+  const { selectedCategoryId, selectedCategory } = useMemo(() => {
+    const selectedCategoryId = subCategoryId || categoryId;
     return {
-      category: categories.find((c) => c.id === order.values.categoryId)?.name,
-      subCategory: categories.find((c) => c.id === order.values.subCategoryId)?.name,
       selectedCategory: categories.find((c) => c.id === selectedCategoryId)?.name,
       selectedCategoryId,
     };
-  }, [order.values.categoryId, order.values.subCategoryId]);
+  }, [categoryId, subCategoryId]);
 
   const filteredOrders = useMemo(() => {
-    return orders.filter((o) => o.type === order.values.type);
-  }, [orders, order.values.type]);
+    return orders.filter((o) => o.type === orderType);
+  }, [orders, orderType]);
 
   const { countDineIn, countTakeAway, countDelivery, countCredit } = useMemo(() => {
     let countDineIn = 0;
@@ -181,10 +90,10 @@ export default function POS() {
   }, [orders]);
 
   const returnAmount = useMemo(() => {
-    return (order.values.received || 0) - order.values.net;
-  }, [order.values.received, order.values.net, order.values.discountValue]);
+    return (received || 0) - order?.net;
+  }, [received, order?.net]);
 
-  const handleAddItem = async (item: Item) => {
+  const handleAddItem = async (item: items) => {
     let originalPrice = categories.find((c) => c.id === selectedCategoryId && c.price > 0)?.price || item.price;
     //category factored price
     const factored = categories.find((c) => c.id === selectedCategoryId && c.factor > 0);
@@ -192,36 +101,48 @@ export default function POS() {
       originalPrice *= factored.factor;
     }
     let discountedPrice = originalPrice;
-    let discount = appliedDiscounts.find((d) => !(d.items as string[])?.length && !(d.categories as string[])?.length);
+    let discount = autoApplyDiscounts.find(
+      (d) => !(d.items as string[])?.length && !(d.categories as string[])?.length
+    );
     if (discount) {
       //flat discount
       discountedPrice *= 1 - discount.value / 100;
     } else {
       //item discount
-      discount = appliedDiscounts.find(
+      discount = autoApplyDiscounts.find(
         (d) => (d.items as string[])?.includes(item.id) || (d.categories as string[])?.includes(selectedCategoryId)
       );
       if (discount) {
         discountedPrice *= 1 - discount.value / 100;
       }
     }
-    if (!order.values.discounts.some((d) => d.id === discount.id) && discount) {
-      order.setFieldValue('discounts', [
-        ...order.values.discounts,
-        { id: discount.id, value: discount.value, name: discount.name },
-      ]);
+    if (!(order.discounts as any[])?.some((d) => d.id === discount.id) && discount) {
+      store.setState((s) => ({
+        order: {
+          ...s.order,
+          discounts: [
+            ...((s.order?.discounts as any[]) ?? []),
+            {
+              id: discount.id,
+              name: discount.name,
+              value: discount.value,
+            },
+          ],
+        },
+      }));
     }
-    const newItems = order.values.items.map((existingItem) => {
-      if (existingItem.itemId === item.id && selectedCategory === existingItem.category) {
-        return {
-          ...existingItem,
-          quantity: existingItem.quantity + 1,
-          totalAmount: existingItem.totalAmount + discountedPrice,
-        };
-      }
-      return existingItem;
-    });
-    const itemExists = newItems.some((i) => i.itemId === item.id && selectedCategory === i.category);
+    const newItems =
+      order.items?.map((existingItem) => {
+        if (existingItem.itemId === item.id && selectedCategory === existingItem.category) {
+          return {
+            ...existingItem,
+            quantity: existingItem.quantity + 1,
+            totalAmount: existingItem.totalAmount + discountedPrice,
+          };
+        }
+        return existingItem;
+      }) ?? [];
+    const itemExists = newItems?.some((i) => i.itemId === item.id && selectedCategory === i.category);
     if (!itemExists) {
       newItems.push({
         itemId: item.id,
@@ -231,38 +152,39 @@ export default function POS() {
         totalAmount: Math.floor(discountedPrice),
         originalPrice: Math.floor(originalPrice),
         category: selectedCategory,
-        categoryId: order.values.subCategoryId || order.values.categoryId,
+        categoryId: selectedCategoryId,
+        orderId: undefined,
       });
     }
-    order.setFieldValue('items', newItems);
+    store.setState((s) => ({ order: { ...s.order, items: newItems } }));
   };
 
   const handleDeleteOrder = async () => {
     const deleted = await removeOrderDetails({
-      where: { orderId: order.values.id },
+      where: { orderId: order.id },
     });
     if (deleted) {
       await removeOrder({
-        where: { id: order.values.id },
+        where: { id: order.id },
       });
       await createOrderDelete({
         data: {
           id: uuid(),
-          orderNumber: order.values.orderNumber,
-          type: order.values.type,
+          orderNumber: order.orderNumber,
+          type: order.type,
           status: OrderStatus.Deleted,
-          reason: order.values.deleteReason,
-          total: order.values.total,
-          discount: order.values.discountValue,
-          commission: order.values.commission,
-          net: order.values.net,
-          items: order.values.items,
-          waiter: order.values.waiter,
-          payment: order.values.payment,
+          reason: deletedOrder?.reason,
+          total: order.total,
+          discount: order.discountValue,
+          commission: order.commission,
+          net: order.net,
+          items: order.items,
+          waiter: order.waiter,
+          payment: order.payment,
         },
       });
-      const _orders = orders.filter((o) => o.id !== order.values.id);
-      setOrders(_orders);
+      const _orders = orders.filter((o) => o.id !== order.id);
+      store.setState({ orders: _orders });
       notify('success', 'Order deleted', 'Success');
       setDeleteConfirm(false);
       handleOrderReset();
@@ -294,19 +216,19 @@ export default function POS() {
       }
     }
     let discountValue;
-    if (!order.values.discounts?.length) {
-      discountValue = order.values.discountValue;
+    if (!((order.discounts as any[]) ?? [])?.length) {
+      discountValue = order.discountValue;
     }
     const updated = await updateOrder({
-      where: { id: order.values.id },
-      data: { status, payment: method, tip, discountValue, net: order.values.net },
+      where: { id: order.id },
+      data: { status, payment: method, tip, discountValue, net: order.net },
     });
     if (updated) {
-      const _orders = orders.filter((o) => o.id !== order.values.id);
-      setOrders(_orders);
+      const _orders = orders.filter((o) => o.id !== order.id);
+      store.setState({ orders: _orders });
       notify('success', 'Order paid', 'Success', true);
       setPaymentMethod(null);
-      handlePrint();
+      // handlePrint();
       handleOrderReset();
     } else {
       notify('error', 'Error', 'Failed to pay order');
@@ -314,28 +236,90 @@ export default function POS() {
   };
 
   const handleOrderReset = () => {
-    order.resetForm({
-      values: {
-        ...order.initialValues,
-        type: order.values.type,
-      },
-    });
+    store.setState({ order: null });
+    setCategoryId(null);
+    setSubCategoryId(null);
+    setIsNew(false);
+    setIsEdit(false);
+    setDeletedOrder(null);
+    setReceived(null);
   };
 
-  const handleApplyDiscount = (applyDiscount: Discount, apply: boolean) => {
+  const handleOrderSave = async () => {
+    try {
+      const order = store.getState().order;
+      const total = order.items.reduce((t, item) => t + item.originalPrice * item.quantity, 0);
+      const net = order.items.reduce((t, item) => t + item.totalAmount, 0);
+      const discount = total - net;
+      const items = order.items;
+      if (!order?.id) {
+        const now = new Date();
+        const item = await createOrder({
+          data: {
+            id: uuid(),
+            orderNumber: `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`,
+            type: order.type,
+            status: order.status,
+            waiter: order.waiter,
+            payment: order.payment,
+            commission: order.commission,
+            total,
+            discountValue: Math.ceil(discount),
+            net,
+            shiftId: shift.id,
+            discounts: order.discounts,
+            items: {
+              create: items,
+            },
+            customer: order.customer,
+          },
+          include: { items: { omit: { orderId: true } } },
+        });
+        notify('success', 'Order added', 'Success');
+        store.setState({ orders: [...orders, item] });
+      } else {
+        const item = await updateOrder({
+          where: { id: order.id },
+          data: {
+            total,
+            discountValue: discount,
+            net,
+            discounts: order.discounts,
+            items: { deleteMany: {}, create: items },
+            customer: order.customer,
+            type: order.type,
+          },
+          include: { items: { omit: { orderId: true } } },
+        });
+        if (item) {
+          store.setState((s) => ({ orders: s.orders.map((o) => (o.id === item.id ? item : o)) }));
+          notify('success', 'Order updated', 'Success');
+        } else {
+          notify('error', 'Error', 'Failed to update order');
+        }
+      }
+      handleOrderReset();
+    } catch (e: any) {
+      notify('error', 'Error', e.message);
+    }
+  };
+
+  const handleApplyDiscount = (applyDiscount: discounts, apply: boolean) => {
     //check if order is selected
-    if (order.values.id) {
-      let _appliedDiscounts = discounts.filter((x) => order.values.discounts.some((d) => d.id === x.id)) as Discount[];
+    if (order.id) {
+      let _appliedDiscounts = discounts.filter((x) =>
+        ((order.discounts as any[]) ?? [])?.some((d) => d.id === x.id)
+      ) as discounts[];
       if (apply) {
         _appliedDiscounts.push(applyDiscount);
       } else {
         _appliedDiscounts = _appliedDiscounts.filter((d) => d.id !== applyDiscount.id);
       }
       const confirmation = window.confirm('Are you sure you want change discounts ?');
-      if (true) {
+      if (confirmation) {
         let grossTotal = 0;
         let discountedTotal = 0;
-        const newItems = order.values.items.map((item) => {
+        const newItems = order.items.map((item) => {
           let discountedPrice = item.originalPrice;
           let discount = _appliedDiscounts.find(
             (d) => !(d.items as string[])?.length && !(d.categories as string[])?.length
@@ -360,7 +344,7 @@ export default function POS() {
           };
         });
         updateOrder({
-          where: { id: order.values.id },
+          where: { id: order.id },
           data: {
             total: grossTotal,
             discountValue: grossTotal - discountedTotal,
@@ -376,11 +360,11 @@ export default function POS() {
           .then((updated) => {
             if (updated) {
               //refresh orders
-              const newOrders = orders.filter((o) => o.id !== order.values.id);
+              const newOrders = orders.filter((o) => o.id !== order.id);
               newOrders.push(updated);
-              setOrders(newOrders.sort((a, b) => (a.orderNumber > b.orderNumber ? 1 : -1)));
+              store.setState({ orders: newOrders.sort((a, b) => (a.orderNumber > b.orderNumber ? 1 : -1)) });
               notify('success', 'Order updated', 'Success');
-              handleOrderReset();
+              // handleOrderReset();
             } else {
               notify('error', 'Error', 'Failed to update order');
             }
@@ -391,39 +375,33 @@ export default function POS() {
       } else {
         handleOrderReset();
       }
-    } else {
-      if (apply) {
-        setAppliedDiscounts([...appliedDiscounts, applyDiscount]);
-      } else {
-        setAppliedDiscounts(appliedDiscounts.filter((d) => d.id !== applyDiscount.id));
-      }
     }
   };
 
   const handleOrderMove = () => {
-    if (order.values.id) {
+    if (order?.id) {
       const confirmMove = confirm('Are you sure you want to move this order?');
       if (confirmMove) {
-        if (!order.values.customer) setSelectCustomer(true);
+        if (!order.customer) setSelectCustomer(true);
       }
     }
   };
 
-  const handlePrint = () => {
-    const win = window.open(
-      `/bill/${order.values.orderNumber}`,
-      '_blank',
-      'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
-    );
-  };
+  // const handlePrint = () => {
+  //   const win = window.open(
+  //     `/bill/${order.orderNumber}`,
+  //     '_blank',
+  //     'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
+  //   );
+  // };
 
   //visual feedback
+
   useEffect(() => {
     const table = tableRef.current;
     if (!table) {
       return;
     } else {
-      console.log('tableRef', tableRef);
       const observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           // Row added
@@ -456,81 +434,68 @@ export default function POS() {
 
   useEffect(() => {
     (async () => {
-      const currentShift = await getShift({
-        where: {
-          closeAt: null,
-        },
-      });
-      if (currentShift) {
-        setCurrentShift(currentShift);
-        const staff = await getStaff({
-          select: { id: true, name: true, commission: true, isServing: true },
-          orderBy: { name: 'asc' },
-        });
-        const categories = await getCategories({ orderBy: { order: 'asc' } });
-        const items = await getItems({
-          orderBy: [{ order: 'asc' }, { name: 'asc' }],
-        });
-        const orders = await getOrders({
-          where: { shiftId: currentShift.id, status: { not: { in: [OrderStatus.Paid, OrderStatus.Due] } } },
-          include: { items: { omit: { orderId: true } } },
-          orderBy: { createdAt: 'asc' },
-        });
-        const discounts = await getDiscounts({
-          select: {
-            id: true,
-            name: true,
-            value: true,
-            autoApply: true,
-            items: true,
-            categories: true,
-          },
-          where: {
-            isActive: true,
-          },
-          orderBy: { name: 'asc' },
-        });
-        const customers = await getUniqueCustomers();
-        const accounts = await getAccounts({
-          orderBy: {
-            name: 'asc',
-          },
-        });
-        const ledgerRecords = await getLedger({
-          where: {
-            shiftId: currentShift.id,
-          },
-        });
-
-        const _accounts = [...accounts, ...staff]
-          .map((a) => ({
-            id: a.id,
-            name: a.name,
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setWaiters(staff.filter((s) => s.isServing));
-        setCategories(categories);
-        setItems(items);
-        setOrders(orders);
-        setDiscounts(discounts);
-        setAppliedDiscounts(discounts.filter((d) => d.autoApply));
-        setCustomers(customers.map((c) => c.customer));
-        setAccounts(_accounts);
-        setLedgerRecords(ledgerRecords);
+      if (shift) {
+        if (!staff.length) store.setState({ staff: await getStaff({ orderBy: { name: 'asc' } }) });
+        if (!categories.length) store.setState({ categories: await getCategories({ orderBy: { order: 'asc' } }) });
+        if (!items.length) store.setState({ items: await getItems({ orderBy: [{ order: 'asc' }, { name: 'asc' }] }) });
+        if (!accounts.length) {
+          const accounts = (await getAccounts({ orderBy: { name: 'asc' } })).map((a) => a.name);
+          store.getState().staff.forEach((x) => accounts.push(x.name));
+          accounts.push('Cash');
+          accounts.push('Bank');
+          store.setState({ accounts: accounts.sort((a, b) => a.localeCompare(b)) });
+        }
+        if (!orders.length) {
+          store.setState({
+            orders: await getOrders({
+              where: { shiftId: shift.id, status: { not: { in: [OrderStatus.Paid, OrderStatus.Due] } } },
+              include: { items: { omit: { orderId: true } } },
+              orderBy: { createdAt: 'asc' },
+            }),
+          });
+        }
+        if (!discounts.length) {
+          const discounts = await getDiscounts({
+            select: {
+              id: true,
+              name: true,
+              value: true,
+              autoApply: true,
+              items: true,
+              categories: true,
+            },
+            where: {
+              isActive: true,
+            },
+            orderBy: { name: 'asc' },
+          });
+          store.setState({
+            discounts: discounts,
+            autoApplyDiscounts: discounts.filter((d) => d.autoApply),
+          });
+        }
       } else {
-        setCurrentShift(null);
+        store.setState({
+          shift: await getShift({
+            where: {
+              closeAt: null,
+            },
+          }),
+        });
       }
     })();
-  }, []);
+  }, [shift]);
 
-  if (!currentShift) {
+  useEffect(() => {
+    console.log(`🚀 | page.tsx:497 | order:`, order);
+  }, [order]);
+
+  if (!shift) {
     return (
-      <>
-        <div className="flex flex-col items-center justify-center">
-          <h1 className="mb-4 text-2xl font-bold">Please open a shift first</h1>
-          <Button label="Home" icon="pi pi-home" onClick={() => router.push('/')} className="min-w-24 p-5" />
-        </div>
-      </>
+      <div className="flex flex-col items-center justify-center">
+        <h1 className="mb-4 text-2xl font-bold">Please open a shift first</h1>
+        <Button label="Home" icon="pi pi-home" onClick={() => router.push('/')} className="min-w-24 p-5" />
+      </div>
     );
   }
 
@@ -543,30 +508,34 @@ export default function POS() {
           icon="pi pi-list"
           severity="success"
           badge={countDineIn.toString()}
-          onClick={() => order.setFieldValue('type', OrderType.DineIn)}
-          disabled={order.values.type === OrderType.DineIn || order.values.isNew}
           className="min-w-24 p-5"
+          disabled={orderType === OrderType.DineIn || !!order?.orderNumber}
+          onClick={() => {
+            setOrderType(OrderType.DineIn);
+          }}
         />
         <Button
           label="Take Away"
           icon="pi pi-shopping-bag"
           severity="secondary"
           badge={countTakeAway.toString()}
-          onClick={() => order.setFieldValue('type', OrderType.TakeAway)}
-          disabled={order.values.type === OrderType.TakeAway || order.values.isNew}
           className="min-w-24 p-5"
+          disabled={orderType === OrderType.TakeAway || !!order?.orderNumber}
+          onClick={() => {
+            setOrderType(OrderType.TakeAway);
+          }}
         />
         <Button
           label="Credit"
           icon="pi pi-credit-card"
           severity="secondary"
           badge={countCredit.toString()}
+          className="min-w-24 p-5"
+          disabled={orderType === OrderType.Credit}
           onClick={() => {
-            order.setFieldValue('type', OrderType.Credit);
+            setOrderType(OrderType.Credit);
             handleOrderMove();
           }}
-          disabled={order.values.type === OrderType.Credit || order.values.isNew}
-          className="min-w-24 p-5"
         />
         <Divider layout="vertical" />
         <div className="flex grow justify-center gap-2">
@@ -594,28 +563,28 @@ export default function POS() {
           />
         </div>
       </div>
-      {!order.values.isNew && !order.values.isEdit ? (
+      {!isNew && !isEdit ? (
         <div className="grid grid-cols-12">
           <div className="col-span-5">
             <DataTable
               dataKey="id"
               size="small"
               value={filteredOrders}
-              selection={order.values}
+              selection={order as orders | null}
               selectionMode="single"
               scrollHeight="600px"
               rowGroupMode="subheader"
-              groupRowsBy={order.values.type === OrderType.DineIn ? 'waiter' : 'customer'}
-              sortField="waiter"
+              groupRowsBy={orderType === OrderType.DineIn ? 'waiter' : 'customer'}
+              sortField={orderType === OrderType.DineIn ? 'waiter' : 'orderNumber'}
               columnResizeMode="expand"
               className="compact-table"
               pt={{ wrapper: { style: { height: '600px', backgroundColor: 'white' } } }}
               showGridlines
               onSelectionChange={(e) => {
                 if (e.value) {
-                  order.setValues(e.value);
+                  store.setState({ order: e.value });
                 } else {
-                  handleOrderReset();
+                  store.setState({ order: null });
                 }
               }}
               rowGroupHeaderTemplate={(data: Order) => (
@@ -639,8 +608,8 @@ export default function POS() {
                 }
                 style={{ width: '100px', textAlign: 'center' }}
               />
-              {order.values.type === OrderType.DineIn && <Column header="Waiter" field="waiter" />}
-              {order.values.type === OrderType.Credit && <Column header="Customer" field="customer" />}
+              {orderType === OrderType.DineIn && <Column header="Waiter" field="waiter" />}
+              {orderType === OrderType.Credit && <Column header="Customer" field="customer" />}
               <Column header="Status" field="status" align="center" style={{ width: '80px', textAlign: 'center' }} />
               <Column
                 header="Total"
@@ -657,10 +626,20 @@ export default function POS() {
                 label="New"
                 icon="pi pi-plus"
                 severity="info"
-                disabled={order.values.id}
+                disabled={!!order}
                 onClick={() => {
-                  order.setFieldValue('isNew', true);
-                  if (order.values.type === OrderType.Credit) setSelectCustomer(true);
+                  const now = new Date();
+                  store.setState({
+                    order: {
+                      orderNumber: `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`,
+                      type: orderType,
+                      status: OrderStatus.Pending,
+                      shiftId: shift.id,
+                    },
+                  });
+                  setIsNew(true);
+                  setIsEdit(false);
+                  if (orderType === OrderType.Credit) setSelectCustomer(true);
                 }}
                 className="min-w-28 p-4"
               />
@@ -669,23 +648,23 @@ export default function POS() {
                 label="Close"
                 icon="pi pi-times"
                 severity="secondary"
-                disabled={!order.values.id}
-                onClick={() => handleOrderReset()}
+                disabled={!order}
                 className="min-w-28 p-4"
+                onClick={handleOrderReset}
               />
               <Button
                 label="Edit"
                 icon="pi pi-pencil"
                 severity="secondary"
-                disabled={!order.values.id}
-                onClick={() => order.setFieldValue('isEdit', true)}
+                disabled={!order?.id}
+                onClick={() => setIsEdit(true)}
                 className="min-w-28 p-4"
               />
               <Button
                 label="Delete"
                 icon="pi pi-times"
                 severity="danger"
-                disabled={!order.values.id}
+                disabled={!order?.id}
                 onClick={() => {
                   setDeleteConfirm(true);
                 }}
@@ -695,10 +674,10 @@ export default function POS() {
               <Button
                 label="Bill"
                 icon="pi pi-file"
-                disabled={!order.values.id}
+                disabled={!order?.id}
                 className="min-w-28 p-4"
                 onClick={() => {
-                  handlePrint();
+                  // handlePrint();
                 }}
               />
               <Divider className="my-2" />
@@ -708,9 +687,8 @@ export default function POS() {
                 severity="success"
                 onClick={() => {
                   setPaymentMethod('cash');
-                  order.setFieldValue('payment', 'cash');
                 }}
-                disabled={!order.values.id}
+                disabled={!order?.id}
                 className="min-w-28 p-4"
               />
               <Button
@@ -719,10 +697,9 @@ export default function POS() {
                 severity="warning"
                 onClick={() => {
                   setPaymentMethod('card');
-                  order.setFieldValue('payment', 'card');
-                  order.setFieldValue('received', order.values.net);
+                  setReceived(order?.net);
                 }}
-                disabled={!order.values.id}
+                disabled={!order?.id}
                 className="min-w-28 p-4"
               />
               <Button
@@ -731,68 +708,33 @@ export default function POS() {
                 severity="warning"
                 onClick={() => {
                   setPaymentMethod('online');
-                  order.setFieldValue('payment', 'online');
-                  order.setFieldValue('received', order.values.net);
+                  setReceived(order?.net);
                 }}
-                disabled={!order.values.id}
+                disabled={!order?.id}
                 className="min-w-28 p-4"
               />
             </div>
           </div>
           <div className="col-span-6 bg-white">
-            <DataTable
-              value={order.values.items}
-              size="small"
-              showGridlines
-              scrollHeight="400px"
-              pt={{ wrapper: { style: { height: '400px', backgroundColor: 'white' } } }}
-            >
-              <Column field="name" header="Name" />
-              <Column field="category" header="Category" style={{ width: '180px' }} />
-              <Column
-                field="quantity"
-                header="Quantity"
-                align="center"
-                style={{ textAlign: 'center', width: '100px' }}
-              />
-              <Column
-                field="originalPrice"
-                header="Price"
-                align="center"
-                style={{ textAlign: 'center', width: '100px' }}
-              />
-              <Column
-                field="discount"
-                header="Discount"
-                style={{ width: '100px' }}
-                align="center"
-                body={(data) => data.originalPrice - data.price}
-              />
-              <Column
-                field="totalAmount"
-                header="Total"
-                align="center"
-                style={{ textAlign: 'center', width: '100px' }}
-              />
-            </DataTable>
+            <OrderItems items={order?.items} scrollHeight="400px" />
             <div className="w-full border-0 border-t p-4">
               <div className="flex items-center justify-between text-lg">
                 <div>
-                  Order : <b>{order.values.orderNumber}</b>
+                  Order : <b>{order?.orderNumber}</b>
                 </div>
                 <div>
-                  Waiter : <b>{order.values.waiter}</b>
+                  Waiter : <b>{order?.waiter}</b>
                 </div>
                 <div>
                   Discount :&nbsp;
                   <b>
-                    {(order.values.total - order.values.net).toLocaleString('en-US', {
+                    {(order?.total - order?.net).toLocaleString('en-US', {
                       maximumFractionDigits: 0,
                     })}
                   </b>
                 </div>
                 <div>
-                  Total : <b>{order.values.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}</b>
+                  Total : <b>{order?.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}</b>
                 </div>
               </div>
               <Divider />
@@ -805,9 +747,9 @@ export default function POS() {
                       name={dis.name}
                       value={dis.id}
                       checked={
-                        order.values.id
-                          ? order.values.discounts?.some((d) => d.id === dis.id)
-                          : appliedDiscounts.some((d) => d.id === dis.id)
+                        order
+                          ? (order.discounts as any[])?.some((d) => d.id === dis.id)
+                          : autoApplyDiscounts.some((d) => d.id === dis.id)
                       }
                       onChange={(e) => handleApplyDiscount(dis, e.checked)}
                     />
@@ -823,176 +765,115 @@ export default function POS() {
       ) : (
         <>
           {/* Waiter selection */}
-          {!order.values.waiter && order.values.isNew && order.values.type === OrderType.DineIn ? (
+          {!order?.waiter && isNew && orderType === OrderType.DineIn && (
             <div className="flex flex-wrap gap-2">
               <Button
                 label="Close"
                 icon="pi pi-times"
-                onClick={() => handleOrderReset()}
+                onClick={handleOrderReset}
                 severity="secondary"
                 className="pos-button"
               />
-              {waiters.map((waiter) => (
-                <Button
-                  key={waiter.id}
-                  label={waiter.name}
-                  onClick={() => {
-                    order.setFieldValue('waiter', waiter.name);
-                    order.setFieldValue('commission', waiter.commission);
-                  }}
-                  className="pos-button"
-                />
-              ))}
+              {staff
+                .filter((s) => s.isServing)
+                .map((waiter) => (
+                  <Button
+                    key={waiter.id}
+                    label={waiter.name}
+                    className="pos-button"
+                    onClick={() => {
+                      store.setState({
+                        order: {
+                          ...order,
+                          waiter: waiter.name,
+                          commission: waiter.commission,
+                        },
+                      });
+                    }}
+                  />
+                ))}
             </div>
-          ) : (
-            <>
-              {/* items selection */}
-              <div className="grid grid-cols-12">
-                <div className="col-span-5">
-                  <div className="flex flex-wrap gap-2">
-                    {order.values.categoryId && <Chip label={category} className="mb-2" />}
-                    {order.values.subCategoryId && <Chip label={subCategory} className="mb-2" />}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {/* Category selection */}
-                    {!order.values.categoryId &&
-                      categories.map((c) => {
-                        return (
-                          (c.parents as string[]).length === 0 && (
-                            <Button
-                              key={c.id}
-                              label={c.name}
-                              className="pos-button"
-                              onClick={() => order.setFieldValue('categoryId', c.id)}
-                            />
-                          )
-                        );
-                      })}
-                    {/* Sub Category selection */}
-                    {order.values.categoryId && !order.values.subCategoryId && (
-                      <>
-                        <Button
-                          label="Back"
-                          icon="pi pi-arrow-left"
-                          onClick={() => order.setFieldValue('categoryId', null)}
-                          severity="secondary"
-                          className="pos-button"
-                        />
-                        {categories.map((c) => {
-                          return (
-                            (c.parents as string[]).includes(order.values.categoryId) && (
-                              <Button
-                                key={c.id}
-                                label={c.name}
-                                className="pos-button"
-                                onClick={() => order.setFieldValue('subCategoryId', c.id)}
-                                severity="info"
-                              />
-                            )
-                          );
-                        })}
-                        {items.map((i) => {
-                          return (
-                            (i.categories as string[]).includes(order.values.categoryId) && (
-                              <Button
-                                key={i.id}
-                                label={i.name}
-                                className="pos-button"
-                                onClick={() => {
-                                  handleAddItem(i);
-                                }}
-                                severity="help"
-                              />
-                            )
-                          );
-                        })}
-                      </>
-                    )}
-                    {/* Items selections */}
-                    {order.values.subCategoryId && (
-                      <>
-                        <Button
-                          label="Back"
-                          icon="pi pi-arrow-left"
-                          onClick={() => order.setFieldValue('subCategoryId', null)}
-                          severity="secondary"
-                          className="pos-button"
-                        />
-                        {items.map((i) => {
-                          return (
-                            (i.categories as string[]).includes(order.values.subCategoryId) && (
-                              <Button
-                                key={i.id}
-                                label={i.name}
-                                className="pos-button"
-                                onClick={() => {
-                                  handleAddItem(i);
-                                }}
-                                severity="help"
-                              />
-                            )
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
+          )}
+          {(order?.waiter || [OrderType.TakeAway, OrderType.Credit].includes(orderType)) && (
+            <div className="grid grid-cols-12">
+              <div className="col-span-5">
+                <div className="flex flex-wrap gap-2">
+                  {/* {categoryId && <Chip label={category} className="mb-2" />}
+                  {subCategoryId && <Chip label={subCategory} className="mb-2" />} */}
                 </div>
-                <div className="col-span-1">
-                  <div className="flex flex-col items-center justify-center gap-1">
+                <div className="flex flex-wrap gap-2">
+                  {categoryId && (
                     <Button
-                      label="Done"
-                      icon="pi pi-check"
-                      onClick={() => order.submitForm()}
-                      severity="success"
-                      className="min-w-28 p-5"
-                    />
-                    <Divider />
-                    <Button
-                      label="Close"
-                      icon="pi pi-times"
+                      label="Back"
+                      icon="pi pi-arrow-left"
+                      onClick={() => {
+                        setCategoryId(null);
+                        setSubCategoryId(null);
+                      }}
                       severity="secondary"
-                      onClick={() => handleOrderReset()}
-                      className="min-w-28 p-5"
+                      className="pos-button"
                     />
-                  </div>
-                </div>
-                <div className="col-span-6" ref={tableRef}>
-                  <DataTable value={order.values.items} size="small" showGridlines>
-                    <Column field="name" header="Name" />
-                    <Column field="category" header="Category" />
-                    <Column field="quantity" header="Quantity" className="text-center font-bold" align="center" />
-                    <Column field="price" header="Price" className="text-center font-bold" align="center" />
-                    <Column
-                      field="totalAmount"
-                      header="Total"
-                      className="text-center font-bold"
-                      align="center"
-                      body={(d) => Math.floor(d.totalAmount)}
-                    />
-                    {/* <Column
-                      field="action"
-                      header="Action"
-                      align="center"
-                      body={(data) => (
-                        <>
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              icon="pi pi-times"
-                              severity="danger"
-                              className="p-1"
-                              onClick={() => {
-
-                                console.log(data);
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-                    /> */}
-                  </DataTable>
+                  )}
+                  {categories.map((c) => {
+                    const isCategory = (c.parents as string[]).length < 1 && !categoryId;
+                    if (isCategory) {
+                      return (
+                        <Button key={c.id} label={c.name} className="pos-button" onClick={() => setCategoryId(c.id)} />
+                      );
+                    } else if ((c.parents as string[]).includes(selectedCategoryId)) {
+                      return (
+                        <Button
+                          key={c.id}
+                          label={c.name}
+                          className="pos-button"
+                          onClick={() => {
+                            console.log(`🚀 | page.tsx:857 | c.id:`, c.id);
+                            setSubCategoryId(c.id);
+                          }}
+                        />
+                      );
+                    }
+                  })}
+                  {items.map((i) => {
+                    return (
+                      (i.categories as string[]).includes(selectedCategoryId) && (
+                        <Button
+                          key={i.id}
+                          label={i.name}
+                          className="pos-button"
+                          severity="help"
+                          onClick={() => {
+                            handleAddItem(i);
+                          }}
+                        />
+                      )
+                    );
+                  })}
                 </div>
               </div>
-            </>
+              <div className="col-span-1">
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <Button
+                    label="Done"
+                    icon="pi pi-check"
+                    onClick={handleOrderSave}
+                    severity="success"
+                    className="min-w-28 p-5"
+                  />
+                  <Divider />
+                  <Button
+                    label="Close"
+                    icon="pi pi-times"
+                    severity="secondary"
+                    onClick={handleOrderReset}
+                    className="min-w-28 p-5"
+                  />
+                </div>
+              </div>
+              <div className="col-span-6" ref={tableRef}>
+                <OrderItems items={order?.items || []} allowItemRemove={true} />
+              </div>
+            </div>
           )}
         </>
       )}
@@ -1023,7 +904,7 @@ export default function POS() {
               />
               <Button
                 label="Done"
-                disabled={!order.values.deleteReason}
+                disabled={!deletedOrder?.reason}
                 onClick={() => handleDeleteOrder()}
                 severity="success"
               />
@@ -1031,31 +912,39 @@ export default function POS() {
           )}
         >
           <div className="grid grid-cols-3 gap-4">
-            <Button label="Mistake" outlined onClick={() => order.setFieldValue('deleteReason', 'By mistake')} />
+            <Button
+              label="Mistake"
+              outlined
+              onClick={() =>
+                setDeletedOrder((s) => ({
+                  ...s,
+                  reason: 'By mistake',
+                }))
+              }
+            />
             <Button
               label="Customer Request"
               outlined
-              onClick={() => order.setFieldValue('deleteReason', 'Customer request')}
+              onClick={() => setDeletedOrder((s) => ({ ...s, reason: 'Customer request' }))}
             />
             <Button
               label="Complain"
               severity="danger"
               outlined
-              onClick={() => order.setFieldValue('deleteReason', 'Complain: ')}
+              onClick={() => setDeletedOrder((s) => ({ ...s, reason: 'Complain: ' }))}
             />
             <InputTextarea
               rows={4}
               className="col-span-3"
-              value={order.values.deleteReason || ''}
-              onChange={(e) => order.setFieldValue('deleteReason', e.target.value)}
+              value={deletedOrder?.reason || ''}
+              onChange={(e) => setDeletedOrder((s) => ({ ...s, reason: e.target.value }))}
             />
           </div>
         </Dialog>
       )}
-      {/* CASH PAYMENT */}
       {paymentMethod === 'cash' && (
         <Dialog
-          header={`Cash # ${order.values.orderNumber}`}
+          header={`Cash # ${order.orderNumber}`}
           visible={true}
           resizable={false}
           draggable={false}
@@ -1080,7 +969,7 @@ export default function POS() {
               />
               <Button
                 label="Done"
-                disabled={!order.values.received || returnAmount < 0}
+                disabled={!received || returnAmount < 0}
                 onClick={() => handlePayment('cash')}
                 severity="success"
               />
@@ -1090,47 +979,19 @@ export default function POS() {
           <div className="grid grid-cols-12 gap-4 p-2">
             <div className="col-span-5 flex items-center">
               <div className="grid w-full grid-cols-2 gap-5">
-                <Button
-                  label="Rs. 10"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 10)}
-                />
-                <Button
-                  label="Rs. 50"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 50)}
-                />
-                <Button
-                  label="Rs. 100"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 100)}
-                />
-                <Button
-                  label="Rs. 200"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 200)}
-                />
-                <Button
-                  label="Rs. 500"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 500)}
-                />
-                <Button
-                  label="Rs. 1000"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 1000)}
-                />
-                <Button
-                  label="Rs. 5000"
-                  outlined
-                  onClick={() => order.setFieldValue('received', Number(order.values.received ?? 0) + 5000)}
-                />
+                <Button label="Rs. 10" outlined onClick={() => setReceived(Number(received ?? 0) + 10)} />
+                <Button label="Rs. 50" outlined onClick={() => setReceived(Number(received ?? 0) + 50)} />
+                <Button label="Rs. 100" outlined onClick={() => setReceived(Number(received ?? 0) + 100)} />
+                <Button label="Rs. 200" outlined onClick={() => setReceived(Number(received ?? 0) + 200)} />
+                <Button label="Rs. 500" outlined onClick={() => setReceived(Number(received ?? 0) + 500)} />
+                <Button label="Rs. 1000" outlined onClick={() => setReceived(Number(received ?? 0) + 1000)} />
+                <Button label="Rs. 5000" outlined onClick={() => setReceived(Number(received ?? 0) + 5000)} />
                 <Button
                   label="Clear"
                   severity="danger"
                   icon="pi pi-delete-left"
                   outlined
-                  onClick={() => order.setFieldValue('received', null)}
+                  onClick={() => setReceived(null)}
                 />
               </div>
             </div>
@@ -1139,40 +1000,46 @@ export default function POS() {
               <div className="flex items-center justify-between p-2">
                 <div className="text-lg font-bold">Total:</div>
                 <div className="w-1/2 px-2 font-bold">
-                  Rs. {order.values.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  Rs. {order.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </div>
               </div>
               <div className="flex items-center justify-between p-2">
                 <div className="text-lg font-bold">Discount:</div>
                 <div className="w-1/2 px-2 font-bold">
-                  (Rs. {order.values.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })})
+                  (Rs. {order.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })})
                 </div>
               </div>
               <div className="flex items-center justify-between p-2">
                 <div className="text-lg font-bold">Bill:</div>
                 <div className="w-1/2 px-2 font-bold">
-                  Rs. {order.values.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  Rs. {order.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </div>
               </div>
               <Divider />
               <div className="flex items-center justify-between p-2">
                 <div className="text-lg font-bold">Received:</div>
                 <InputText
-                  value={order.values.received?.toString() || ''}
-                  onChange={(e) => order.setFieldValue('received', Number(e.target.value))}
+                  value={received?.toString() || ''}
+                  onChange={(e) => setReceived(Number(e.target.value))}
                   inputMode="numeric"
                   className="w-1/2 font-semibold"
                   type="number"
                 />
               </div>
-              {!order.values.discounts?.length && (
+              {!((order.discounts as any[]) ?? []).length && (
                 <div className="flex items-center justify-between p-2">
                   <div className="text-lg font-bold">Discount:</div>
                   <InputText
-                    value={order.values.discountValue?.toString() || ''}
+                    value={order.discountValue?.toString() || ''}
                     onChange={(e) => {
-                      order.setFieldValue('discountValue', Number(e.target.value));
-                      order.setFieldValue('net', Number(order.values.total) - Number(e.target.value));
+                      store.setState((s) => ({
+                        ...s,
+                        order: {
+                          ...s.order,
+                          discountValue: Number(e.target.value),
+                          net: Number(s.order.total) - Number(e.target.value),
+                        },
+                      }));
                     }}
                     inputMode="numeric"
                     className="w-1/2 font-semibold"
@@ -1194,7 +1061,7 @@ export default function POS() {
       )}
       {(paymentMethod === 'card' || paymentMethod === 'online') && (
         <Dialog
-          header={`${paymentMethod === 'card' ? 'Card' : 'Online'} # ${order.values.orderNumber}`}
+          header={`${paymentMethod === 'card' ? 'Card' : 'Online'} # ${order.orderNumber}`}
           visible={true}
           resizable={false}
           draggable={false}
@@ -1219,7 +1086,7 @@ export default function POS() {
               />
               <Button
                 label="Done"
-                disabled={!order.values.received || returnAmount < 0}
+                disabled={!received || returnAmount < 0}
                 onClick={() => handlePayment(paymentMethod)}
                 severity="success"
               />
@@ -1230,27 +1097,27 @@ export default function POS() {
             <div className="flex items-center justify-between p-2">
               <div className="text-lg font-bold">Total:</div>
               <div className="w-1/2 px-2 font-bold">
-                Rs. {order.values.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                Rs. {order.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
             </div>
             <div className="flex items-center justify-between p-2">
               <div className="text-lg font-bold">Discount:</div>
               <div className="w-1/2 px-2 font-bold">
-                (Rs. {order.values.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })})
+                (Rs. {order.discountValue.toLocaleString('en-US', { maximumFractionDigits: 0 })})
               </div>
             </div>
             <div className="flex items-center justify-between p-2">
               <div className="text-lg font-bold">Bill:</div>
               <div className="w-1/2 px-2 font-bold">
-                Rs. {order.values.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                Rs. {order.net.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </div>
             </div>
             <Divider />
             <div className="flex items-center justify-between p-2">
               <div className="text-lg font-bold">Received:</div>
               <InputText
-                value={order.values.received?.toString() || ''}
-                onChange={(e) => order.setFieldValue('received', Number(e.target.value))}
+                value={received?.toString() || ''}
+                onChange={(e) => setReceived(Number(e.target.value))}
                 inputMode="numeric"
                 className="w-1/2 font-semibold"
                 type="number"
@@ -1269,7 +1136,7 @@ export default function POS() {
       )}
       {selectCustomer && (
         <Dialog
-          header={`Credit # ${order.values.orderNumber}`}
+          header={`Credit # ${order.orderNumber}`}
           visible={true}
           resizable={false}
           draggable={false}
@@ -1294,9 +1161,18 @@ export default function POS() {
               />
               <Button
                 label="Done"
-                disabled={!order.values.customer}
+                disabled={!order.customer}
                 onClick={() => {
-                  if (order.values.id) order.submitForm();
+                  if (order.id) {
+                    store.setState((s) => ({
+                      ...s,
+                      order: {
+                        ...s.order,
+                        type: OrderType.Credit,
+                      },
+                    }));
+                    handleOrderSave();
+                  }
                   setSelectCustomer(false);
                 }}
                 severity="success"
@@ -1308,31 +1184,24 @@ export default function POS() {
             <div className="flex items-center justify-between gap-4 p-2">
               <div className="text-lg font-bold">Customer:</div>
               <InputText
-                value={order.values.customer || ''}
-                onChange={(e) => order.setFieldValue('customer', e.target.value)}
+                value={order.customer || ''}
+                onChange={(e) => {
+                  store.setState({
+                    order: {
+                      ...order,
+                      customer: e.target.value,
+                    },
+                  });
+                }}
                 className="font-semibold"
               />
             </div>
           </div>
         </Dialog>
       )}
-      <CashOut
-        visible={cashOut}
-        accounts={accounts}
-        ledgerRecords={ledgerRecords}
-        shift={currentShift}
-        setVisible={setCashOut}
-        setLedgerRecords={setLedgerRecords}
-      />
-      <CashIn
-        visible={cashIn}
-        accounts={accounts}
-        ledgerRecords={ledgerRecords}
-        shift={currentShift}
-        setVisible={setCashIn}
-        setLedgerRecords={setLedgerRecords}
-      />
-      {saleReturn && <SaleReturn visible={saleReturn} shift={currentShift} setVisible={setSaleReturn} />}
+      <CashOut visible={cashOut} accounts={accounts} shift={shift} setVisible={setCashOut} />
+      <CashIn visible={cashIn} accounts={accounts} shift={shift} setVisible={setCashIn} />
+      {saleReturn && <SaleReturn visible={saleReturn} shift={shift} setVisible={setSaleReturn} />}
     </>
   );
 }

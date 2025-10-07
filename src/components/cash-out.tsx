@@ -1,4 +1,4 @@
-import { accounts, ledger, shifts } from '@prisma/client';
+import { ledger, shifts } from '@prisma/client';
 import { useFormik } from 'formik';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
@@ -15,14 +15,12 @@ import uuid from '../helpers/uuid';
 
 type Props = {
   visible: boolean;
-  accounts: accounts[];
-  ledgerRecords: ledger[];
+  accounts: string[];
   shift: shifts;
   setVisible: Dispatch<SetStateAction<boolean>>;
-  setLedgerRecords: Dispatch<SetStateAction<ledger[]>>;
 };
 
-export default function CashOut({ visible, accounts, ledgerRecords, shift, setVisible, setLedgerRecords }: Props) {
+export default function CashOut({ visible, accounts, shift, setVisible }: Props) {
   const cashOutForm = useFormik({
     initialValues: {
       account: null,
@@ -59,7 +57,6 @@ export default function CashOut({ visible, accounts, ledgerRecords, shift, setVi
         }
         const ledger = await createLedger({ data });
         if (ledger.count > 0) {
-          setLedgerRecords([...ledgerRecords, ...data]);
           cashOutForm.resetForm();
           notify('success', 'Cash out added', 'Success');
         }
@@ -129,8 +126,6 @@ export default function CashOut({ visible, accounts, ledgerRecords, shift, setVi
             <Dropdown
               options={accounts}
               placeholder="Account"
-              optionLabel="name"
-              optionValue="name"
               invalid={cashOutForm.errors.account ? true : false}
               filter
               {...cashOutForm.getFieldProps('account')}
@@ -152,11 +147,7 @@ export default function CashOut({ visible, accounts, ledgerRecords, shift, setVi
             />
           </div>
           <div className="col-span-3">
-            <DataTable
-              value={ledgerRecords.filter((x) => x.credit > 0)}
-              className="compact-table border border-solid border-[lightgrey]"
-              stripedRows
-            >
+            <DataTable value={[]} className="compact-table border border-solid border-[lightgrey]" stripedRows>
               <Column
                 header="#"
                 field="sn"

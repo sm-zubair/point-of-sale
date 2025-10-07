@@ -11,11 +11,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { createShift, getNotes, getShifts, getStaff, updateShift } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
+import store from '../store';
 
 export default function Home() {
+  const staff = store((s) => s.staff);
   const router = useRouter();
   const [shifts, setShifts] = useState([]);
-  const [staff, setStaff] = useState([]);
   const [notes, setNotes] = useState('');
 
   const [_5000, set_5000] = useState<Number>(0);
@@ -115,11 +116,13 @@ export default function Home() {
           openAt: formatted,
         };
       });
-      const staff = await getStaff({ where: { isServing: false }, orderBy: { name: 'asc' } });
+      const staff = await getStaff({ orderBy: { name: 'asc' } });
       const notes = await getNotes();
       setShifts(shifts);
-      setStaff(staff);
       setNotes(notes);
+      store.setState({
+        staff,
+      });
     })();
   }, []);
 
@@ -477,7 +480,7 @@ export default function Home() {
                 <i className="pi pi-user"></i>
               </span>
               <Dropdown
-                options={staff}
+                options={staff.filter((x) => !x.isServing)}
                 placeholder="Select a staff"
                 optionLabel="name"
                 value={selectedStaff}
