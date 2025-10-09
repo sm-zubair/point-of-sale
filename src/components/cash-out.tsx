@@ -9,7 +9,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger, getLedger } from '../actions';
+import { createLedger, getGeneralLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 
@@ -24,9 +24,11 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
   const [ledger, setLedger] = useState([]);
 
   useEffect(() => {
-    getLedger({
+    getGeneralLedger({
       where: {
+        account: 'Cash',
         shiftId: shift.id,
+        credit: { gt: 0 },
       },
     })
       .then((data) => {
@@ -174,15 +176,15 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
                   return rowIndex + 1;
                 }}
               />
-              <Column header="Account" field="to" style={{ width: '30%' }} />
+              <Column header="Account" field="account" style={{ width: '30%' }} />
               <Column header="Description" field="description" style={{ width: '40%' }} />
               <Column
                 header="Amount"
-                field="amount"
+                field="credit"
                 align="right"
                 style={{ width: '20%', textAlign: 'right' }}
                 body={(data) => {
-                  return Number(data.amount)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                  return Number(data.credit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                 }}
               />
             </DataTable>

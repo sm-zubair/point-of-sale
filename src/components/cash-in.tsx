@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger, getLedger } from '../actions';
+import { createLedger, getGeneralLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 type Props = {
@@ -22,9 +22,11 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
   const [ledger, setLedger] = useState([]);
 
   useEffect(() => {
-    getLedger({
+    getGeneralLedger({
       where: {
+        account: 'Cash',
         shiftId: shift.id,
+        debit: { gt: 0 },
       },
     })
       .then((data) => {
@@ -33,7 +35,7 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
       .catch((e) => {
         notify('error', 'Error', e.message);
       });
-  }, []);
+  }, [shift.id]);
 
   const cashInForm = useFormik({
     initialValues: {
@@ -152,15 +154,15 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
                   return rowIndex + 1;
                 }}
               />
-              <Column header="Account" field="to" style={{ width: '30%' }} />
+              <Column header="Account" field="account" style={{ width: '30%' }} />
               <Column header="Description" field="description" style={{ width: '40%' }} />
               <Column
                 header="Amount"
-                field="amount"
+                field="debit"
                 align="right"
                 style={{ width: '20%', textAlign: 'right' }}
                 body={(data) => {
-                  return Number(data.amount)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                  return Number(data.debit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                 }}
               />
             </DataTable>

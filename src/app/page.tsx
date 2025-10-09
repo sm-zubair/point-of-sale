@@ -72,8 +72,8 @@ export default function Home() {
 
     grossTotal = grossDineIn + grossTakeAway + grossDelivery;
     netTotal = dineIn + takeAway + delivery;
-    const debit = selectedShift.viewLedger?.debit || 0;
-    const credit = selectedShift.viewLedger?.credit || 0;
+    const debit = selectedShift.viewLedger[0]?.debit || 0;
+    const credit = selectedShift.viewLedger[0]?.credit || 0;
 
     return {
       dineIn,
@@ -98,7 +98,11 @@ export default function Home() {
           include: {
             statistics: true,
             sales: true,
-            viewLedger: true,
+            viewLedger: {
+              where: {
+                account: 'Cash',
+              },
+            },
           },
         })
       ).map((x) => {
@@ -119,6 +123,9 @@ export default function Home() {
       const staff = await getStaff({ orderBy: { name: 'asc' } });
       const notes = await getNotes();
       setShifts(shifts);
+      console.log(`🚀 -----------------------------------🚀`);
+      console.log(`🚀 | page.tsx:126 | shifts:`, shifts);
+      console.log(`🚀 -----------------------------------🚀`);
       setNotes(notes);
       store.setState({
         staff,

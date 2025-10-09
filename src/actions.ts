@@ -207,11 +207,14 @@ export async function getLedger(params: Prisma.ledgerFindManyArgs) {
 export async function getLedgerSums(shiftId: string) {
   return db.ledger.aggregate({
     _sum: {
-      credit: true,
-      debit: true,
+      amount: true,
     },
     where: {
       shiftId: shiftId,
     },
   });
+}
+
+export async function getGeneralLedger(params: Prisma.general_ledgerFindManyArgs) {
+  return db.general_ledger.findMany(params);
 }

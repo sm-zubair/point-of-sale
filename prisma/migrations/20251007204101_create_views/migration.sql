@@ -52,25 +52,3 @@ CREATE
 				`point_of_sale`.`orders` 
 		GROUP BY
 	`point_of_sale`.`orders`.`shiftId`;
-
-
-	CREATE OR REPLACE VIEW `ledger_view` AS SELECT
-  date,
-	shiftId,
-  `from` AS account,
-  description,
-  NULL AS debit,
-  amount AS credit
-FROM ledger
-UNION ALL
-SELECT
-  date,
-	shiftId,
-  `to` AS account,
-  description,
-  amount AS debit,
-  NULL AS credit
-FROM ledger
-ORDER BY date;
-	
-		
