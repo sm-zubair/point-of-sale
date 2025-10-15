@@ -87,7 +87,7 @@ export default function ItemsPage() {
   }, [selectedItem]);
 
   useEffect(() => {
-    getCategories({}).then((categories) => {
+    getCategories({ orderBy: { name: 'asc' } }).then((categories) => {
       getItems({}).then((items) => {
         setCategories(categories);
         setItems(items);

@@ -2,6 +2,7 @@ import { order_details } from '@prisma/client';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+import { useMemo } from 'react';
 import store from '../store';
 
 type Props = {
@@ -11,10 +12,14 @@ type Props = {
 };
 
 export default function OrderItems({ items = [], scrollHeight = '600px', allowItemRemove = false }: Props) {
+  const _items = useMemo(() => {
+    return items.sort((a, b) => a.category.localeCompare(b.category));
+  }, [items]);
+
   return (
     <>
       <DataTable
-        value={items}
+        value={_items}
         size="small"
         showGridlines
         pt={{ wrapper: { style: { height: scrollHeight, backgroundColor: 'white' } } }}

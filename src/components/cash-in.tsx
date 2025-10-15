@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger, getGeneralLedger } from '../actions';
+import { createLedger, getLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 type Props = {
@@ -22,11 +22,10 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
   const [ledger, setLedger] = useState([]);
 
   useEffect(() => {
-    getGeneralLedger({
+    getLedger({
       where: {
-        account: 'Cash',
+        to: 'Cash',
         shiftId: shift.id,
-        debit: { gt: 0 },
       },
     })
       .then((data) => {
@@ -154,15 +153,15 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
                   return rowIndex + 1;
                 }}
               />
-              <Column header="Account" field="account" style={{ width: '30%' }} />
+              <Column header="Account" field="from" style={{ width: '30%' }} />
               <Column header="Description" field="description" style={{ width: '40%' }} />
               <Column
                 header="Amount"
-                field="debit"
+                field="amount"
                 align="right"
                 style={{ width: '20%', textAlign: 'right' }}
                 body={(data) => {
-                  return Number(data.debit)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                  return Number(data.amount)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                 }}
               />
             </DataTable>

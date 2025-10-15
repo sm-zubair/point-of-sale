@@ -228,7 +228,7 @@ export default function POS() {
       store.setState({ orders: _orders });
       notify('success', 'Order paid', 'Success', true);
       setPaymentMethod(null);
-      // handlePrint();
+      handlePrint();
       handleOrderReset();
     } else {
       notify('error', 'Error', 'Failed to pay order');
@@ -387,13 +387,13 @@ export default function POS() {
     }
   };
 
-  // const handlePrint = () => {
-  //   const win = window.open(
-  //     `/bill/${order.orderNumber}`,
-  //     '_blank',
-  //     'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
-  //   );
-  // };
+  const handlePrint = () => {
+    const win = window.open(
+      `/bill/${order.orderNumber}`,
+      '_blank',
+      'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
+    );
+  };
 
   //visual feedback
 
@@ -677,7 +677,7 @@ export default function POS() {
                 disabled={!order?.id}
                 className="min-w-28 p-4"
                 onClick={() => {
-                  // handlePrint();
+                  handlePrint();
                 }}
               />
               <Divider className="my-2" />

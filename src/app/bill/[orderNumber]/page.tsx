@@ -12,7 +12,7 @@ export default async function Bill({ params }: { params: Promise<{ orderNumber: 
     include: { items: true },
   });
 
-  for (const item of order?.items ?? []) {
+  for (const item of order?.items.sort((a, b) => a.category.localeCompare(b.category)) ?? []) {
     items[item.category] = items[item.category] || [];
     items[item.category].push(item);
   }
