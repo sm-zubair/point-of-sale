@@ -8,7 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger, getLedger } from '../actions';
+import { createLedgers, getLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 type Props = {
@@ -66,7 +66,7 @@ export default function CashIn({ visible, accounts, shift, setVisible }: Props) 
           notify('error', 'Error', 'No entries found');
           return;
         }
-        const ledger = await createLedger({ data });
+        const ledger = await createLedgers({ data });
         if (ledger.count > 0) {
           setLedger((s) => [...s, ...data]);
           cashInForm.resetForm();

@@ -196,12 +196,20 @@ export async function getNotes() {
   return fs.readFileSync('notes.txt', 'utf8');
 }
 
-export async function createLedger(params: Prisma.ledgerCreateManyArgs) {
+export async function createLedgers(params: Prisma.ledgerCreateManyArgs) {
   return await db.ledger.createMany(params);
 }
-
+export async function createLedger(params: Prisma.ledgerCreateArgs) {
+  return await db.ledger.create(params);
+}
 export async function getLedger(params: Prisma.ledgerFindManyArgs) {
   return db.ledger.findMany(params);
+}
+export async function removeLedger(options: Prisma.ledgerDeleteArgs) {
+  return await db.ledger.delete(options);
+}
+export async function updateLedger(params: Prisma.ledgerUpdateArgs) {
+  return await db.ledger.update(params);
 }
 
 export async function getLedgerSums(shiftId: string) {

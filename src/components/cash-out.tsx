@@ -9,7 +9,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { createLedger, getLedger } from '../actions';
+import { createLedgers, getLedger } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 
@@ -75,7 +75,7 @@ export default function CashOut({ visible, accounts, shift, setVisible }: Props)
           notify('error', 'Error', 'No entries found');
           return;
         }
-        const ledger = await createLedger({ data });
+        const ledger = await createLedgers({ data });
         if (ledger.count > 0) {
           setLedger((s) => [...s, ...data]);
           cashOutForm.resetForm();

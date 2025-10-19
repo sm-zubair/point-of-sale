@@ -12,6 +12,10 @@
   @import 'tailwindcss/utilities.css';
 }
 
+html {
+  font-size: 14px;
+}
+
 .dev {
   /* border: 1px solid red; */
   background-color: lightgrey;
@@ -24,6 +28,11 @@
 .pos-button {
   width: 152px;
   height: 80px;
+  font-size: 12px;
+}
+
+.pos-button img {
+  width: 100%;
 }
 
 body {
