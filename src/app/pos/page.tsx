@@ -448,7 +448,10 @@ export default function POS() {
         if (!orders.length) {
           store.setState({
             orders: await getOrders({
-              where: { shiftId: shift.id, status: { not: { in: [OrderStatus.Paid, OrderStatus.Due] } } },
+              where: {
+                // shiftId: shift.id,
+                status: { not: { in: [OrderStatus.Paid, OrderStatus.Due] } },
+              },
               include: { items: { omit: { orderId: true } } },
               orderBy: { createdAt: 'asc' },
             }),
