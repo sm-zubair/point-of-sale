@@ -226,3 +226,7 @@ export async function getLedgerSums(shiftId: string) {
 export async function getGeneralLedger(params: Prisma.general_ledgerFindManyArgs) {
   return db.general_ledger.findMany(params);
 }
+
+export async function getTrailBalance(params: Prisma.trail_balanceFindManyArgs) {
+  return await db.trail_balance.findMany(params);
+}

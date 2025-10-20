@@ -213,3 +213,9 @@ view viewledger {
   @@unique([shiftId, account])
   @@map("viewledger")
 }
+
+view trail_balance {
+  account String @unique @db.VarChar(128)
+  debit   Int?   @default(0)
+  credit  Int?   @default(0)
+}

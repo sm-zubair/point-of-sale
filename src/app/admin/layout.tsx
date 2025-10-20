@@ -79,11 +79,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
         <Divider layout="vertical" />
         <Button
-          label="General Ledger"
+          label="Ledger Entry"
           icon="pi pi-money-bill"
-          severity="success"
           onClick={() => {
             router.push('/admin/general-ledger');
+          }}
+          className="min-w-24 p-5"
+        />
+        <Button
+          label="Reports"
+          icon="pi pi-list"
+          onClick={() => {
+            router.push('/admin/reports');
           }}
           className="min-w-24 p-5"
         />

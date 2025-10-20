@@ -31,6 +31,11 @@ html {
   font-size: 12px;
 }
 
+.reports-button {
+  width: 110px;
+  height: 60px;
+}
+
 .pos-button img {
   width: 100%;
 }
