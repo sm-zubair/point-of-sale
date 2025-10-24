@@ -1,22 +1,31 @@
 SELECT
-  `point_of_sale`.`ledger`.`date` AS `date`,
-  `point_of_sale`.`ledger`.`shiftId` AS `shiftId`,
-  `point_of_sale`.`ledger`.`from` AS `account`,
-  `point_of_sale`.`ledger`.`description` AS `description`,
-  NULL AS `debit`,
-  `point_of_sale`.`ledger`.`amount` AS `credit`
-FROM
-  `point_of_sale`.`ledger`
-UNION
-ALL
+    s.openAt                AS shiftDate,
+    l.date                  AS ledgerDate,
+    l.shiftId               AS shiftId,
+    l.`from`                AS account,
+    l.description           AS description,
+    NULL                    AS debit,
+    l.amount                AS credit
+FROM ledger AS l
+INNER JOIN shifts AS s 
+    ON l.shiftId = s.id
+
+UNION ALL
+
 SELECT
-  `point_of_sale`.`ledger`.`date` AS `date`,
-  `point_of_sale`.`ledger`.`shiftId` AS `shiftId`,
-  `point_of_sale`.`ledger`.`to` AS `account`,
-  `point_of_sale`.`ledger`.`description` AS `description`,
-  `point_of_sale`.`ledger`.`amount` AS `debit`,
-  NULL AS `credit`
-FROM
-  `point_of_sale`.`ledger`
-ORDER BY
-  `date`
+    s.openAt                AS shiftDate,
+    l.date                  AS ledgerDate,
+    l.shiftId               AS shiftId,
+    l.`to`                  AS account,
+    l.description           AS description,
+    l.amount                AS debit,
+    NULL                    AS credit
+FROM ledger AS l
+INNER JOIN shifts AS s 
+    ON l.shiftId = s.id
+
+ORDER BY 
+    shiftDate ASC,
+    ledgerDate ASC,
+    shiftId ASC,
+    account ASC;

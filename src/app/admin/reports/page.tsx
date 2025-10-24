@@ -47,6 +47,7 @@ export default function Reports() {
       case 'generalLedger': {
         const data = await getGeneralLedger({
           select: {
+            shiftDate: true,
             account: true,
             description: true,
             debit: true,
@@ -54,7 +55,12 @@ export default function Reports() {
           },
           where: { shiftId: { in: shiftIds } },
         });
-        setRecords(data);
+        setRecords(
+          data.map((x) => ({
+            ...x,
+            shiftDate: x.shiftDate.toLocaleDateString(),
+          }))
+        );
         break;
       }
       case 'trialBalance': {
@@ -205,8 +211,13 @@ export default function Reports() {
             className="compact-table border border-solid border-[lightgrey]"
             scrollHeight="600px"
             selectionMode="single"
+            groupRowsBy="shiftDate"
+            rowGroupMode="subheader"
             rows={20}
             paginator
+            rowGroupHeaderTemplate={(data) => (
+              <div className="-mx-1.5 -my-[5px] bg-[lightgrey] p-0! font-bold">{data.shiftDate}</div>
+            )}
           >
             <Column
               header="#"

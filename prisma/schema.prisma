@@ -184,14 +184,15 @@ view statistics {
   delivery    Int?     @default(0)
   cash        Int?     @default(0)
   bank        Int?     @default(0)
-  online      Int?     @default(0)  
+  online      Int?     @default(0)
   shifts      shifts[]
 
   @@map("statistics")
 }
 
 view general_ledger {
-  date        DateTime @default(dbgenerated("'0000-00-00 00:00:00'")) @db.DateTime(0)
+  shiftDate   DateTime @default(dbgenerated("'0000-00-00 00:00:00'")) @db.DateTime(0)
+  ledgerDate  DateTime @default(dbgenerated("'0000-00-00 00:00:00'")) @db.DateTime(0)
   shiftId     String   @default("") @db.VarChar(36)
   account     String   @default("") @db.VarChar(128)
   description String   @db.MediumText
