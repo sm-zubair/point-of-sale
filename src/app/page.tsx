@@ -8,7 +8,7 @@ import { Fieldset } from 'primereact/fieldset';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useEffect, useMemo, useState } from 'react';
-import { createShift, getNotes, getShifts, getStaff, updateShift } from '../actions';
+import { createShift, getCreditSales, getNotes, getShifts, getStaff, updateShift } from '../actions';
 import notify from '../helpers/notify';
 import uuid from '../helpers/uuid';
 import store from '../store';
@@ -30,6 +30,7 @@ export default function Home() {
   const [selectedShift, setSelectedShift] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [balance, setBalance] = useState<number>(0);
+  const [receivables, setReceivables] = useState<number>(0);
 
   const total = useMemo(() => {
     return (
@@ -122,10 +123,9 @@ export default function Home() {
       });
       const staff = await getStaff({ orderBy: { name: 'asc' } });
       const notes = await getNotes();
+      const creditSales = await getCreditSales();
+      setReceivables(creditSales._sum.net);
       setShifts(shifts);
-      console.log(`🚀 -----------------------------------🚀`);
-      console.log(`🚀 | page.tsx:126 | shifts:`, shifts);
-      console.log(`🚀 -----------------------------------🚀`);
       setNotes(notes);
       store.setState({
         staff,
@@ -287,13 +287,7 @@ export default function Home() {
                   {selectedShift?.statistics?.bank.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
                 </div>
                 <div className="text-right font-semibold">Credit :</div>
-                <div className="font-semibold">
-                  {selectedShift?.statistics?.credit.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
-                </div>
-                {/* <div className="text-right font-semibold">Online Due :</div>
-                <div className="font-semibold">
-                  {selectedShift?.statistics?.onlineDue.toLocaleString('en-US', { minimumFractionDigits: 0 })}
-                </div> */}
+                <div className="font-semibold">{receivables.toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
                 <Divider className="col-span-4" />
                 <div className="text-right font-semibold">Expenses :</div>
                 <div className="font-semibold">

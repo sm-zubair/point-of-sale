@@ -1,6 +1,8 @@
 'use server';
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
+import OrderStatus from './constants/order-status';
+import OrderType from './constants/order-type';
 
 const prisma = new PrismaClient();
 
@@ -229,4 +231,27 @@ export async function getGeneralLedger(params: Prisma.general_ledgerFindManyArgs
 
 export async function getTrailBalance(params: Prisma.trail_balanceFindManyArgs) {
   return await db.trail_balance.findMany(params);
+}
+
+export async function getCreditSales() {
+  return db.orders.aggregate({
+    _sum: {
+      net: true,
+    },
+    where: {
+      type: OrderType.Credit,
+      status: OrderStatus.Pending,
+    },
+  });
+}
+
+export async function getBankBalance() {
+  const records = await db.statistics.aggregate({
+    _sum: {
+      online: true,
+      bank: true,
+    },
+  });
+
+  return records._sum.online + records._sum.bank;
 }

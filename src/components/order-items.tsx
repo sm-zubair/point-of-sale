@@ -25,7 +25,7 @@ export default function OrderItems({ items = [], scrollHeight = '600px', allowIt
         pt={{ wrapper: { style: { height: scrollHeight, backgroundColor: 'white' } } }}
         scrollHeight={scrollHeight}
       >
-        <Column field="name" header="Name" />
+        <Column field="name" header="Name" style={{ width: '180px' }} />
         <Column field="category" header="Category" style={{ width: '180px' }} />
         <Column field="quantity" header="Quantity" align="center" style={{ textAlign: 'center', width: '100px' }} />
         <Column field="originalPrice" header="Price" align="center" style={{ textAlign: 'center', width: '100px' }} />

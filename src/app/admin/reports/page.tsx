@@ -7,7 +7,7 @@ import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';
 import { Fieldset } from 'primereact/fieldset';
 import { useMemo, useState } from 'react';
-import { getGeneralLedger, getShifts, getTrailBalance } from '../../../actions';
+import { getBankBalance, getGeneralLedger, getShifts, getTrailBalance } from '../../../actions';
 import notify from '../../../helpers/notify';
 import store from '../../../store';
 
@@ -59,6 +59,12 @@ export default function Reports() {
       }
       case 'trialBalance': {
         const data = await getTrailBalance({});
+        const bankBalance = await getBankBalance();
+        data.unshift({
+          account: 'Bank',
+          debit: bankBalance,
+          credit: null,
+        });
         setRecords(
           data.map((x) => ({
             ...x,

@@ -31,6 +31,7 @@ import SaleReturn from '../../components/sale-return';
 import OrderStatus from '../../constants/order-status';
 import OrderType from '../../constants/order-type';
 import notify from '../../helpers/notify';
+import handlePrint from '../../helpers/print';
 import uuid from '../../helpers/uuid';
 import store from '../../store';
 
@@ -221,14 +222,21 @@ export default function POS() {
     }
     const updated = await updateOrder({
       where: { id: order.id },
-      data: { status, payment: method, tip, discountValue, net: order.net },
+      data: {
+        status,
+        payment: method,
+        tip,
+        discountValue,
+        net: order.net,
+        shiftId: shift.id,
+      },
     });
     if (updated) {
       const _orders = orders.filter((o) => o.id !== order.id);
       store.setState({ orders: _orders });
       notify('success', 'Order paid', 'Success', true);
       setPaymentMethod(null);
-      handlePrint();
+      handlePrint(order.orderNumber);
       handleOrderReset();
     } else {
       notify('error', 'Error', 'Failed to pay order');
@@ -387,16 +395,7 @@ export default function POS() {
     }
   };
 
-  const handlePrint = () => {
-    const win = window.open(
-      `/bill/${order.orderNumber}`,
-      '_blank',
-      'width=400,height=600,toolbar=no,menubar=no,scrollbars=yes,location=no,directories=no,status=no,left=200,top=150'
-    );
-  };
-
   //visual feedback
-
   useEffect(() => {
     const table = tableRef.current;
     if (!table) {
@@ -680,7 +679,7 @@ export default function POS() {
                 disabled={!order?.id}
                 className="min-w-28 p-4"
                 onClick={() => {
-                  handlePrint();
+                  handlePrint(order.orderNumber);
                 }}
               />
               <Divider className="my-2" />
@@ -804,7 +803,7 @@ export default function POS() {
                   {/* {categoryId && <Chip label={category} className="mb-2" />}
                   {subCategoryId && <Chip label={subCategory} className="mb-2" />} */}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {categoryId && (
                     <Button
                       label="Back"

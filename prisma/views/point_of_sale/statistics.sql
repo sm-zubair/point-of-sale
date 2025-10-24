@@ -52,28 +52,28 @@ SELECT
       END
     )
   ) AS `online`,
-  sum(
-    (
-      CASE
-        WHEN (
-          (`point_of_sale`.`orders`.`payment` = 'online')
-          AND (`point_of_sale`.`orders`.`status` = 'due')
-        ) THEN `point_of_sale`.`orders`.`net`
-        ELSE 0
-      END
-    )
-  ) AS `onlineDue`,
-  sum(
-    (
-      CASE
-        WHEN (
-          (`point_of_sale`.`orders`.`payment` = 'credit')
-          AND (`point_of_sale`.`orders`.`status` = 'due')
-        ) THEN `point_of_sale`.`orders`.`net`
-        ELSE 0
-      END
-    )
-  ) AS `credit`
+  -- sum(
+  --   (
+  --     CASE
+  --       WHEN (
+  --         (`point_of_sale`.`orders`.`payment` = 'online')
+  --         AND (`point_of_sale`.`orders`.`status` = 'due')
+  --       ) THEN `point_of_sale`.`orders`.`net`
+  --       ELSE 0
+  --     END
+  --   )
+  -- ) AS `onlineDue`,
+  -- sum(
+  --   (
+  --     CASE
+  --       WHEN (
+  --         (`point_of_sale`.`orders`.`type` = 'credit')
+  --         AND (`point_of_sale`.`orders`.`status` != 'paid')
+  --       ) THEN `point_of_sale`.`orders`.`net`
+  --       ELSE 0
+  --     END
+  --   )
+  -- ) AS `credit`
 FROM
   `point_of_sale`.`orders`
 GROUP BY

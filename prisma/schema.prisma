@@ -184,9 +184,7 @@ view statistics {
   delivery    Int?     @default(0)
   cash        Int?     @default(0)
   bank        Int?     @default(0)
-  online      Int?     @default(0)
-  onlineDue   Int?     @default(0)
-  credit      Int?     @default(0)
+  online      Int?     @default(0)  
   shifts      shifts[]
 
   @@map("statistics")

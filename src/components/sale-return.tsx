@@ -78,6 +78,7 @@ export default function SaleReturn({ visible, shift, setVisible }: Props) {
           <Column header="Order" field="orderNumber" />
           <Column header="Type" field="type" />
           <Column header="Waiter" field="waiter" />
+          <Column header="Customer" field="customer" />
           <Column header="Status" field="status" align="center" style={{ textAlign: 'center' }} />
           <Column
             header="Gross"
