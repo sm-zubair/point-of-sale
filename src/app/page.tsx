@@ -287,7 +287,9 @@ export default function Home() {
                   {selectedShift?.statistics?.bank.toLocaleString('en-US', { minimumFractionDigits: 0 }) ?? 0}
                 </div>
                 <div className="text-right font-semibold">Credit :</div>
-                <div className="font-semibold">{receivables.toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
+                <div className="font-semibold">
+                  {receivables?.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </div>
                 <Divider className="col-span-4" />
                 <div className="text-right font-semibold">Expenses :</div>
                 <div className="font-semibold">
@@ -433,6 +435,7 @@ export default function Home() {
                       });
                       setShifts(_shifts);
                       setSelectedShift(null);
+                      store.setState({ shift: null });
                     } else {
                       //open shift
                       const shift = await createShift({

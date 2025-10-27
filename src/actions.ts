@@ -255,3 +255,20 @@ export async function getBankBalance() {
 
   return records._sum.online + records._sum.bank;
 }
+
+export async function getSaleDetails(shiftIds: string[], _group: any[]) {
+  return db.order_details.groupBy({
+    by: _group,
+    _sum: {
+      quantity: true,
+      totalAmount: true,
+    },
+    where: {
+      order: {
+        shiftId: {
+          in: shiftIds,
+        },
+      },
+    },
+  });
+}

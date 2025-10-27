@@ -768,7 +768,7 @@ export default function POS() {
         <>
           {/* Waiter selection */}
           {!order?.waiter && isNew && orderType === OrderType.DineIn && (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-10 gap-2">
               <Button
                 label="Close"
                 icon="pi pi-times"

@@ -1,25 +1,36 @@
 'use client';
+import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
 import { Column } from 'primereact/column';
+import { ColumnGroup } from 'primereact/columngroup';
 import { DataTable } from 'primereact/datatable';
 import { Divider } from 'primereact/divider';
-import { Dropdown } from 'primereact/dropdown';
 import { Fieldset } from 'primereact/fieldset';
-import { useMemo, useState } from 'react';
-import { getBankBalance, getGeneralLedger, getShifts, getTrailBalance } from '../../../actions';
+import { Row } from 'primereact/row';
+import { useEffect, useMemo, useState } from 'react';
+import { getBankBalance, getGeneralLedger, getSaleDetails, getShifts, getTrailBalance } from '../../../actions';
 import notify from '../../../helpers/notify';
 import store from '../../../store';
 
 export default function Reports() {
-  const accounts = store((s) => s.accounts);
   const staff = store((s) => s.staff);
 
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [records, setRecords] = useState([]);
+  const [filters, setFilters] = useState({});
+  const [visibleData, setVisibleData] = useState([]);
   const [report, setReport] = useState<
-    'financial' | 'saleDetails' | 'dayEnd' | 'generalLedger' | 'items' | 'categories' | 'staff' | 'trialBalance'
+    | 'financial'
+    | 'dayEnd'
+    | 'generalLedger'
+    | 'items'
+    | 'categories'
+    | 'staff'
+    | 'trialBalance'
+    | 'saleDetailsCategory'
+    | 'saleDetailsItem'
   >();
 
   const getRecords = async () => {
@@ -42,7 +53,7 @@ export default function Reports() {
       },
     });
     const shiftIds = shifts.map((x) => x.id);
-    if (!shiftIds.length) return notify('info', 'No Records', 'No shifts found');
+    if (!shiftIds.length && report !== 'trialBalance') return notify('info', 'No Records', 'No shifts found');
     switch (report) {
       case 'generalLedger': {
         const data = await getGeneralLedger({
@@ -79,6 +90,29 @@ export default function Reports() {
         );
         break;
       }
+      case 'saleDetailsCategory': {
+        const data = await getSaleDetails(shiftIds, ['category']);
+        setRecords(
+          data.map((item) => ({
+            category: item.category,
+            quantity: item._sum.quantity,
+            totalAmount: item._sum.totalAmount,
+          }))
+        );
+        break;
+      }
+      case 'saleDetailsItem': {
+        const data = await getSaleDetails(shiftIds, ['name', 'category']);
+        setRecords(
+          data.map((item) => ({
+            item: item.name,
+            category: item.category,
+            quantity: item._sum.quantity,
+            totalAmount: item._sum.totalAmount,
+          }))
+        );
+        break;
+      }
       default: {
         setRecords([]);
         break;
@@ -94,6 +128,48 @@ export default function Reports() {
     }
   }, [records]);
 
+  useEffect(() => {
+    if (columns.length > 0) {
+      const newFilters = {};
+      columns.forEach((c) => {
+        newFilters[c] = { value: null, matchMode: FilterMatchMode.CONTAINS };
+      });
+      setFilters(newFilters);
+    }
+  }, [columns]);
+
+  const totals = useMemo(() => {
+    const data = visibleData?.length ? visibleData : records;
+    const result = {};
+    columns.forEach((c) => {
+      if (data.length > 0 && typeof data[0][c] === 'number') {
+        result[c] = data.reduce((sum, r) => sum + (r[c] || 0), 0);
+      }
+    });
+    return result;
+  }, [visibleData, records, columns]);
+
+  const footerGroup = (
+    <ColumnGroup>
+      <Row>
+        <Column footer="Total" style={{ textAlign: 'right', fontWeight: 'bold' }} />
+        {columns.map((c, i) => {
+          const isNumeric = typeof totals[c] === 'number';
+          const value = isNumeric ? totals[c].toLocaleString('en-US', { maximumFractionDigits: 0 }) : '';
+          return (
+            <Column
+              key={c}
+              footer={value}
+              style={{
+                textAlign: isNumeric ? 'right' : 'left',
+                fontWeight: isNumeric ? 'bold' : 'normal',
+              }}
+            />
+          );
+        })}
+      </Row>
+    </ColumnGroup>
+  );
   return (
     <Fieldset legend="General Ledger" className="min-h-[768px]">
       <div className="grid grid-cols-3 gap-4">
@@ -125,7 +201,6 @@ export default function Reports() {
               onClick={getRecords}
             />
           </div>
-          <Dropdown options={accounts} placeholder="From" filter />
           <Divider />
           <div className="grid grid-cols-4 gap-3">
             <Button
@@ -137,11 +212,19 @@ export default function Reports() {
               }}
             />
             <Button
-              label="Sale Details"
+              label="Sales (category)"
               className="reports-button"
-              disabled={report === 'saleDetails'}
+              disabled={report === 'saleDetailsCategory'}
               onClick={() => {
-                setReport('saleDetails');
+                setReport('saleDetailsCategory');
+              }}
+            />
+            <Button
+              label="Sales (item)"
+              className="reports-button"
+              disabled={report === 'saleDetailsItem'}
+              onClick={() => {
+                setReport('saleDetailsItem');
               }}
             />
             <Button
@@ -213,6 +296,13 @@ export default function Reports() {
             selectionMode="single"
             groupRowsBy="shiftDate"
             rowGroupMode="subheader"
+            filterDisplay="row"
+            filters={filters}
+            onFilter={(e) => {
+              setFilters(e.filters);
+            }}
+            onValueChange={(filteredValue) => setVisibleData(filteredValue)}
+            footerColumnGroup={footerGroup}
             rows={20}
             paginator
             rowGroupHeaderTemplate={(data) => (
@@ -232,7 +322,9 @@ export default function Reports() {
               <Column
                 header={c}
                 field={c}
-                align={['debit', 'credit', 'balance'].includes(c) ? 'right' : 'left'}
+                align={['debit', 'credit', 'balance', 'totalAmount', 'quantity'].includes(c) ? 'right' : 'left'}
+                sortable
+                filter
                 body={(row) => {
                   switch (c) {
                     case 'debit': {
@@ -242,6 +334,12 @@ export default function Reports() {
                       return row[c]?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                     }
                     case 'balance': {
+                      return row[c]?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    }
+                    case 'totalAmount': {
+                      return row[c]?.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    }
+                    case 'quantity': {
                       return row[c]?.toLocaleString('en-US', { maximumFractionDigits: 0 });
                     }
                     default: {
