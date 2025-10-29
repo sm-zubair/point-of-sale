@@ -142,7 +142,7 @@ export default function Reports() {
     const data = visibleData?.length ? visibleData : records;
     const result = {};
     columns.forEach((c) => {
-      if (data.length > 0 && typeof data[0][c] === 'number') {
+      if (data.length > 0 && typeof (data[0][c] ?? 0) === 'number') {
         result[c] = data.reduce((sum, r) => sum + (r[c] || 0), 0);
       }
     });
@@ -294,8 +294,6 @@ export default function Reports() {
             className="compact-table border border-solid border-[lightgrey]"
             scrollHeight="600px"
             selectionMode="single"
-            groupRowsBy="shiftDate"
-            rowGroupMode="subheader"
             filterDisplay="row"
             filters={filters}
             onFilter={(e) => {
@@ -303,7 +301,7 @@ export default function Reports() {
             }}
             onValueChange={(filteredValue) => setVisibleData(filteredValue)}
             footerColumnGroup={footerGroup}
-            rows={20}
+            rows={15}
             paginator
             rowGroupHeaderTemplate={(data) => (
               <div className="-mx-1.5 -my-[5px] bg-[lightgrey] p-0! font-bold">{data.shiftDate}</div>
