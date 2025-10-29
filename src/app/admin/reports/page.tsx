@@ -9,7 +9,7 @@ import { Divider } from 'primereact/divider';
 import { Fieldset } from 'primereact/fieldset';
 import { Row } from 'primereact/row';
 import { useEffect, useMemo, useState } from 'react';
-import { getBankBalance, getGeneralLedger, getSaleDetails, getShifts, getTrailBalance } from '../../../actions';
+import { getGeneralLedger, getRangeTrailBalance, getSaleDetails, getShifts, getTrailBalance } from '../../../actions';
 import notify from '../../../helpers/notify';
 import store from '../../../store';
 
@@ -31,6 +31,7 @@ export default function Reports() {
     | 'trialBalance'
     | 'saleDetailsCategory'
     | 'saleDetailsItem'
+    | 'rangeTrailBalance'
   >();
 
   const getRecords = async () => {
@@ -76,16 +77,20 @@ export default function Reports() {
       }
       case 'trialBalance': {
         const data = await getTrailBalance({});
-        const bankBalance = await getBankBalance();
-        data.unshift({
-          account: 'Bank',
-          debit: bankBalance,
-          credit: null,
-        });
         setRecords(
           data.map((x) => ({
-            ...x,
+            account: x.account,
             balance: x.debit - x.credit,
+          }))
+        );
+        break;
+      }
+      case 'rangeTrailBalance': {
+        const data = await getRangeTrailBalance(shiftIds);
+        setRecords(
+          data.map((x) => ({
+            account: x.account,
+            balance: x._sum.debit - x._sum.credit,
           }))
         );
         break;
@@ -170,6 +175,7 @@ export default function Reports() {
       </Row>
     </ColumnGroup>
   );
+
   return (
     <Fieldset legend="General Ledger" className="min-h-[768px]">
       <div className="grid grid-cols-3 gap-4">
@@ -279,6 +285,15 @@ export default function Reports() {
               }}
             />
             <Button
+              label="Trial Balance (Range)"
+              className="reports-button"
+              disabled={report === 'rangeTrailBalance'}
+              severity="secondary"
+              onClick={() => {
+                setReport('rangeTrailBalance');
+              }}
+            />
+            <Button
               label="Reset"
               className="reports-button"
               onClick={() => {
@@ -303,9 +318,6 @@ export default function Reports() {
             footerColumnGroup={footerGroup}
             rows={15}
             paginator
-            rowGroupHeaderTemplate={(data) => (
-              <div className="-mx-1.5 -my-[5px] bg-[lightgrey] p-0! font-bold">{data.shiftDate}</div>
-            )}
           >
             <Column
               header="#"

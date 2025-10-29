@@ -233,6 +233,21 @@ export async function getTrailBalance(params: Prisma.trail_balanceFindManyArgs) 
   return await db.trail_balance.findMany(params);
 }
 
+export async function getRangeTrailBalance(shiftIds: string[]) {
+  return await db.viewledger.groupBy({
+    by: ['account'],
+    _sum: {
+      credit: true,
+      debit: true,
+    },
+    where: {
+      shiftId: {
+        in: shiftIds,
+      },
+    },
+  });
+}
+
 export async function getCreditSales() {
   return db.orders.aggregate({
     _sum: {

@@ -1,14 +1,17 @@
 'use client';
 import { useFormik } from 'formik';
+import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
 import { Column } from 'primereact/column';
+import { ColumnGroup } from 'primereact/columngroup';
 import { DataTable } from 'primereact/datatable';
 import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';
 import { Fieldset } from 'primereact/fieldset';
 import { InputText } from 'primereact/inputtext';
-import { useEffect, useState } from 'react';
+import { Row } from 'primereact/row';
+import { useEffect, useMemo, useState } from 'react';
 import * as Yup from 'yup';
 import {
   createLedger,
@@ -30,6 +33,13 @@ export default function GeneralLedger() {
   const staff = store((s) => s.staff);
   const [ledger, setLedger] = useState([]);
   const [selectedLedger, setSelectedLedger] = useState(null);
+  const [visibleData, setVisibleData] = useState([]);
+  const [filters, setFilters] = useState({
+    from: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    to: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    description: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    amount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
 
   const formik = useFormik({
     initialValues: {
@@ -124,6 +134,7 @@ export default function GeneralLedger() {
     if (!shift) {
       formik.resetForm();
       setLedger([]);
+      formik.setFieldValue('date', new Date(d));
     } else {
       const ledger = await getLedger({
         where: {
@@ -134,6 +145,11 @@ export default function GeneralLedger() {
       formik.setFieldValue('shiftId', shift.id);
     }
   };
+
+  const totalAmount = useMemo(() => {
+    const data = visibleData?.length ? visibleData : ledger;
+    return data.reduce((sum, r) => sum + (r.amount || 0), 0);
+  }, [visibleData, ledger]);
 
   useEffect(() => {
     if (selectedLedger) {
@@ -161,6 +177,18 @@ export default function GeneralLedger() {
       }
     })();
   }, []);
+
+  const footerGroup = (
+    <ColumnGroup>
+      <Row>
+        <Column footer="Total" style={{ textAlign: 'right', fontWeight: 'bold' }} />
+        <Column footer="" />
+        <Column footer="" />
+        <Column footer="" />
+        <Column footer={totalAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })} align="right" />
+      </Row>
+    </ColumnGroup>
+  );
 
   return (
     <Fieldset legend="General Ledger" className="min-h-[768px]">
@@ -262,8 +290,12 @@ export default function GeneralLedger() {
             className="compact-table border border-solid border-[lightgrey]"
             scrollHeight="600px"
             selectionMode="single"
-            rows={10}
-            paginator
+            rows={15}
+            filterDisplay="row"
+            filters={filters}
+            onFilter={(e) => {
+              setFilters(e.filters as any);
+            }}
             onSelectionChange={(e) => {
               if (e.value) {
                 setSelectedLedger(e.value);
@@ -272,6 +304,9 @@ export default function GeneralLedger() {
                 formik.resetForm();
               }
             }}
+            onValueChange={(filteredValue) => setVisibleData(filteredValue)}
+            footerColumnGroup={footerGroup}
+            paginator
           >
             <Column
               header="#"
@@ -282,9 +317,15 @@ export default function GeneralLedger() {
                 return rowIndex + 1;
               }}
             />
-            <Column header="From" field="from" style={{ width: '20%' }} />
-            <Column header="To" field="to" style={{ width: '20%' }} />
-            <Column header="Description" field="description" style={{ width: '35%' }} />
+            <Column header="From" field="from" style={{ width: '20%' }} filter filterPlaceholder="From" />
+            <Column header="To" field="to" style={{ width: '20%' }} filter filterPlaceholder="To" />
+            <Column
+              header="Description"
+              field="description"
+              style={{ width: '35%' }}
+              filter
+              filterPlaceholder="Description"
+            />
             <Column
               header="Amount"
               align="right"
@@ -292,6 +333,8 @@ export default function GeneralLedger() {
               body={(data) => {
                 return Number(data.amount)?.toLocaleString('en-US', { maximumFractionDigits: 0 });
               }}
+              filter
+              filterPlaceholder="Amount"
             />
           </DataTable>
         </div>
