@@ -261,11 +261,10 @@ export default function POS() {
       const discount = total - net;
       const items = order.items;
       if (!order?.id) {
-        const now = new Date();
         const item = await createOrder({
           data: {
             id: uuid(),
-            orderNumber: `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`,
+            orderNumber: `${Date.now()}`,
             type: order.type,
             status: order.status,
             waiter: order.waiter,
@@ -630,10 +629,9 @@ export default function POS() {
                 severity="info"
                 disabled={!!order}
                 onClick={() => {
-                  const now = new Date();
                   store.setState({
                     order: {
-                      orderNumber: `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`,
+                      orderNumber: `${Date.now()}`,
                       type: orderType,
                       status: OrderStatus.Pending,
                       shiftId: shift.id,
