@@ -191,7 +191,7 @@ export default function GeneralLedger() {
   );
 
   return (
-    <Fieldset legend="General Ledger" className="min-h-[768px]">
+    <Fieldset legend="General Ledger" className="min-h-192">
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-4">
           <Calendar

@@ -1,5 +1,5 @@
 'use client';
-import { deleted_orders, discounts, type items, type orders as Order, type orders } from '@prisma/client';
+import { deleted_orders, discounts, type items, type orders as Order, type orders } from '../../generated/client';
 import { useRouter } from 'next/navigation';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -31,6 +31,7 @@ import SaleReturn from '../../components/sale-return';
 import OrderStatus from '../../constants/order-status';
 import OrderType from '../../constants/order-type';
 import notify from '../../helpers/notify';
+import handleKotPrint from '../../helpers/kotPrint';
 import handlePrint from '../../helpers/print';
 import uuid from '../../helpers/uuid';
 import store from '../../store';
@@ -589,7 +590,7 @@ export default function POS() {
                 }
               }}
               rowGroupHeaderTemplate={(data: Order) => (
-                <div className="-mx-1.5 -my-[5px] bg-[lightgrey] p-0! text-center font-bold">
+                <div className="-mx-1.5 -my-1.25 bg-[lightgrey] p-0! text-center font-bold">
                   {data.waiter || data.customer}
                 </div>
               )}
@@ -678,6 +679,15 @@ export default function POS() {
                 className="min-w-28 p-4"
                 onClick={() => {
                   handlePrint(order.orderNumber);
+                }}
+              />
+              <Button
+                label="KOT"
+                icon="pi pi-print"
+                disabled={!order?.id}
+                className="min-w-28 p-4"
+                onClick={() => {
+                  handleKotPrint(order.orderNumber);
                 }}
               />
               <Divider className="my-2" />
