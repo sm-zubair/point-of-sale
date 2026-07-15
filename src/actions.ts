@@ -1,14 +1,17 @@
 'use server';
-import { Prisma, PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import OrderStatus from './constants/order-status';
 import OrderType from './constants/order-type';
+import { Prisma, PrismaClient } from './generated/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const prisma = new PrismaClient();
-
-const db = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
+const adapter = new PrismaMariaDb({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
+const db = new PrismaClient({ adapter });
 
 //Shifts
 export async function getShifts(options: Prisma.shiftsFindManyArgs) {
