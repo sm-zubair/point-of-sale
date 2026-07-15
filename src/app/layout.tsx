@@ -4,8 +4,7 @@ import Notification from '../components/notification';
 import '../global.css';
 
 export const metadata = {
-  title: 'Ice & Snack Village',
-  description: "Freddy's food street",
+  title: process.env.NEXT_PUBLIC_APP_NAME || 'Point of Sale',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
