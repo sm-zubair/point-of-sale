@@ -104,7 +104,7 @@ export default async function Bill({ params }: { params: Promise<{ orderNumber: 
           <div className="mt-2 text-center">{process.env.NEXT_PUBLIC_ONLINE_PAYMENT_DESCRIPTION}</div>
         </div>
       )}
-      <script dangerouslySetInnerHTML={{ __html: 'window.print(); window.onafterprint = () => window.close(); setTimeout(() => window.close(), 2000);' }} />
+
     </div>
   );
 }

@@ -60,7 +60,6 @@ export default async function KOT({ params }: { params: Promise<{ orderNumber: s
           ))}
         </tbody>
       </table>
-      <script dangerouslySetInnerHTML={{ __html: 'window.print(); window.onafterprint = () => window.close(); setTimeout(() => window.close(), 2000);' }} />
     </div>
   );
 }
