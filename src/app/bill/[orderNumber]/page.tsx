@@ -22,7 +22,7 @@ export default async function Bill({ params }: { params: Promise<{ orderNumber: 
       <div className="flex items-center justify-center">
         <img src="./logo.png" alt="Logo" width={100} height={100} />
       </div>
-      <div className="text-center">Shop # 3 Freddys Food Court Malir Cantt</div>
+      <div className="text-center">{process.env.NEXT_PUBLIC_SHOP_NAME}</div>
       <div className="my-2 border-2 border-solid p-2">
         <div className="text-center text-base">BILL # {order?.orderNumber}</div>
         <div className="flex items-center justify-between">
@@ -94,15 +94,16 @@ export default async function Bill({ params }: { params: Promise<{ orderNumber: 
           </tr>
         </tfoot>
       </table>
-      <div className="my-2 border-2 border-solid p-2">
-        <div className="text-center">
-          Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER} {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}
+
+      {process.env.NEXT_PUBLIC_SHOW_ONLINE_PAYMENT_INFO === 'true' && (
+        <div className="my-2 border-2 border-solid p-2">
+          <div className="text-center">
+            Online Payment : {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NUMBER}{' '}
+            {process.env.NEXT_PUBLIC_ONLINE_PAYMENT_NAME}
+          </div>
+          <div className="mt-2 text-center">{process.env.NEXT_PUBLIC_ONLINE_PAYMENT_DESCRIPTION}</div>
         </div>
-        <div className="mt-2 text-center">JazzCash, SadaPay, Easypaisa</div>
-        <div className="mt-2 text-center text-[8px]">
-          *All collected remaining change will be donated to various charities
-        </div>
-      </div>
+      )}
       <script>console.log('print....'); window.print();</script>
     </div>
   );
