@@ -1,4 +1,4 @@
-import { categories, discounts, items, order_details, orders, shifts, staff } from '@prisma/client';
+import { categories, discounts, items, order_details, orders, shifts, staff } from './generated/client';
 import { create } from 'zustand';
 
 const store = create<{

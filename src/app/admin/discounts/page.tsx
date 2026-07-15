@@ -1,6 +1,6 @@
 'use client';
 
-import type { categories as Category, discounts as Discount, items as Item } from '@prisma/client';
+import type { categories as Category, discounts as Discount, items as Item } from '../../../generated/client';
 import { useFormik } from 'formik';
 import { FilterMatchMode } from 'primereact/api';
 import { Button } from 'primereact/button';
@@ -112,7 +112,7 @@ export default function DiscountsPage() {
 
   return (
     <>
-      <Fieldset legend="Add / Edit Discount" className="min-h-[768px]">
+      <Fieldset legend="Add / Edit Discount" className="min-h-192">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <div className="flex flex-col gap-4">

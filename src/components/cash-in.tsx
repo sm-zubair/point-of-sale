@@ -1,4 +1,4 @@
-import { ledger, shifts } from '@prisma/client';
+import { ledger, shifts } from '../generated/client';
 import { useFormik } from 'formik';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';

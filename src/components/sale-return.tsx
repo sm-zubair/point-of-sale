@@ -1,4 +1,4 @@
-import { orders, shifts } from '@prisma/client';
+import { orders, shifts } from '../generated/client';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
